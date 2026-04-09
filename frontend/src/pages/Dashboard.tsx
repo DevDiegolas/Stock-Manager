@@ -28,39 +28,40 @@ export default function Dashboard() {
   }, [])
 
   if (loading) {
-    return <div className="animate-pulse">Carregando...</div>
+    return <div className="animate-pulse text-slate-600">Carregando...</div>
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Dashboard</h1>
+    <div className="page-shell">
+      <div className="mb-6">
+        <span className="pill-badge">Resumo</span>
+        <h1 className="page-title mt-3">Dashboard</h1>
+        <p className="page-subtitle">Acompanhe o panorama do estoque com atualizacao rapida.</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Total de Produtos</p>
-          <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+      <div className="mb-8 grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="app-card animate-revealUp delayed-1">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Total de Produtos</p>
+          <p className="mt-2 font-display text-4xl font-bold text-brand-night">{stats.total}</p>
+          <p className="mt-1 text-xs text-slate-500">Catalogo completo cadastrado</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Produtos Ativos</p>
-          <p className="text-3xl font-bold text-green-600 mt-1">{stats.active}</p>
+        <div className="app-card animate-revealUp delayed-2">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Produtos Ativos</p>
+          <p className="mt-2 font-display text-4xl font-bold text-emerald-600">{stats.active}</p>
+          <p className="mt-1 text-xs text-slate-500">Disponiveis para venda</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500">Produtos Inativos</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">{stats.inactive}</p>
+        <div className="app-card animate-revealUp delayed-3">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Produtos Inativos</p>
+          <p className="mt-2 font-display text-4xl font-bold text-rose-600">{stats.inactive}</p>
+          <p className="mt-1 text-xs text-slate-500">Itens fora de circulacao</p>
         </div>
       </div>
 
-      <div className="flex gap-4">
-        <Link
-          to="/products/new"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-        >
+      <div className="flex flex-wrap gap-3">
+        <Link to="/products/new" className="app-button-primary">
           Novo Produto
         </Link>
-        <Link
-          to="/products"
-          className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-        >
+        <Link to="/products" className="app-button-secondary">
           Ver Produtos
         </Link>
       </div>

@@ -80,35 +80,37 @@ export default function ProductForm() {
   }
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        {isEditing ? 'Editar Produto' : 'Novo Produto'}
-      </h1>
+    <div className="page-shell max-w-3xl">
+      <div className="mb-6">
+        <span className="pill-badge">Produto</span>
+        <h1 className="page-title mt-3">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h1>
+        <p className="page-subtitle">Preencha os dados para manter seu catalogo completo e organizado.</p>
+      </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-4">{error}</div>
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+      <form onSubmit={handleSubmit} className="app-card space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Nome</label>
             <input
               name="name"
               value={form.name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
             <select
               name="category"
               value={form.category}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             >
               {categories.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -119,42 +121,42 @@ export default function ProductForm() {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cor</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Cor</label>
             <input
               name="color"
               value={form.color}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Medida</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Medida</label>
             <input
               name="measurement"
               value={form.measurement}
               onChange={handleChange}
               placeholder="Ex: P, M, G, GG"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Tamanho</label>
             <input
               name="size"
               value={form.size}
               onChange={handleChange}
               placeholder="Ex: 36, 38, 40"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Preco (R$)</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Preco (R$)</label>
             <input
               name="price"
               type="number"
@@ -162,21 +164,21 @@ export default function ProductForm() {
               min="0"
               value={form.price}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
               required
             />
           </div>
 
           {!isEditing && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
               <input
                 name="quantity"
                 type="number"
                 min="0"
                 value={form.quantity}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="form-field"
                 required
               />
             </div>
@@ -184,13 +186,13 @@ export default function ProductForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descricao</label>
+          <label className="mb-1 block text-sm font-medium text-slate-700">Descricao</label>
           <textarea
             name="description"
             value={form.description}
             onChange={handleChange}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
+            className="form-field resize-none"
           />
         </div>
 
@@ -198,14 +200,14 @@ export default function ProductForm() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            className="app-button-primary disabled:opacity-50"
           >
             {loading ? 'Salvando...' : isEditing ? 'Salvar' : 'Criar Produto'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/products')}
-            className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="app-button-secondary"
           >
             Cancelar
           </button>

@@ -30,18 +30,19 @@ export default function Products() {
   const totalPages = Math.ceil(total / 20)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-        <Link
-          to="/products/new"
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-        >
+    <div className="page-shell">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="pill-badge">Catalogo</span>
+          <h1 className="page-title mt-3">Produtos</h1>
+          <p className="page-subtitle">Busque, acompanhe e entre no detalhe de cada item.</p>
+        </div>
+        <Link to="/products/new" className="app-button-primary">
           Novo Produto
         </Link>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-5 max-w-lg animate-revealUp delayed-1">
         <input
           type="text"
           placeholder="Buscar produtos..."
@@ -50,49 +51,49 @@ export default function Products() {
             setSearch(e.target.value)
             setPage(1)
           }}
-          className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+          className="form-field"
         />
       </div>
 
       {loading ? (
-        <div className="animate-pulse">Carregando...</div>
+        <div className="animate-pulse text-slate-600">Carregando...</div>
       ) : products.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <p className="text-lg">Nenhum produto encontrado</p>
-          <Link to="/products/new" className="text-indigo-600 hover:text-indigo-700 mt-2 inline-block">
+        <div className="app-empty text-slate-500">
+          <p className="text-lg font-medium text-slate-600">Nenhum produto encontrado</p>
+          <Link to="/products/new" className="mt-2 inline-block font-semibold text-brand-night hover:text-brand-ember">
             Adicionar primeiro produto
           </Link>
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="app-card overflow-hidden p-0">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="border-b border-slate-200 bg-slate-50/80">
                 <tr>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Nome</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Cor</th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Tamanho</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Preco</th>
-                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">Qtd</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Nome</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Categoria</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Cor</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tamanho</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Preco</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100">
                 {products.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
+                  <tr key={p.id} className="transition-colors duration-300 hover:bg-brand-sand/40">
                     <td className="px-6 py-4">
-                      <Link to={`/products/${p.id}`} className="text-indigo-600 hover:text-indigo-700 font-medium">
+                      <Link to={`/products/${p.id}`} className="font-semibold text-brand-night transition-colors hover:text-brand-ember">
                         {p.name}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{p.category}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{p.color}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{p.size || p.measurement || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 text-right font-medium">
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.category}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.color}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{p.size || p.measurement || '-'}</td>
+                    <td className="px-6 py-4 text-right text-sm font-semibold text-slate-800">
                       R$ {p.price.toFixed(2)}
                     </td>
                     <td className="px-6 py-4 text-sm text-right">
-                      <span className={`font-medium ${p.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`font-semibold ${p.quantity > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {p.quantity}
                       </span>
                     </td>
@@ -103,21 +104,21 @@ export default function Products() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
+            <div className="mt-6 flex justify-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
+                className="app-button-secondary disabled:opacity-50"
               >
                 Anterior
               </button>
-              <span className="px-3 py-1 text-sm text-gray-600">
+              <span className="rounded-xl border border-slate-200 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-600">
                 {page} de {totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm disabled:opacity-50"
+                className="app-button-secondary disabled:opacity-50"
               >
                 Proximo
               </button>

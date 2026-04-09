@@ -66,23 +66,24 @@ export default function ProductDetail() {
     navigate('/products')
   }
 
-  if (loading) return <div className="animate-pulse">Carregando...</div>
-  if (!product) return <div>Produto nao encontrado</div>
+  if (loading) return <div className="animate-pulse text-slate-600">Carregando...</div>
+  if (!product) return <div className="app-empty text-slate-600">Produto nao encontrado</div>
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+    <div className="page-shell max-w-5xl">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="pill-badge">Detalhes</span>
+          <h1 className="page-title mt-3">{product.name}</h1>
+          <p className="page-subtitle">Acompanhe informacoes, estoque, fotos e historico deste produto.</p>
+        </div>
         <div className="flex gap-2">
-          <Link
-            to={`/products/${id}/edit`}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-          >
+          <Link to={`/products/${id}/edit`} className="app-button-primary">
             Editar
           </Link>
           <button
             onClick={handleDelete}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            className="rounded-xl border border-rose-300/70 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
           >
             Remover
           </button>
@@ -90,79 +91,73 @@ export default function ProductDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Product Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Detalhes</h2>
+        <div className="app-card">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Detalhes</h2>
           <dl className="space-y-3">
             <div className="flex justify-between">
-              <dt className="text-sm text-gray-500">Categoria</dt>
-              <dd className="text-sm font-medium">{product.category}</dd>
+              <dt className="text-sm text-slate-500">Categoria</dt>
+              <dd className="text-sm font-semibold text-slate-700">{product.category}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-sm text-gray-500">Cor</dt>
-              <dd className="text-sm font-medium">{product.color}</dd>
+              <dt className="text-sm text-slate-500">Cor</dt>
+              <dd className="text-sm font-semibold text-slate-700">{product.color}</dd>
             </div>
             {product.measurement && (
               <div className="flex justify-between">
-                <dt className="text-sm text-gray-500">Medida</dt>
-                <dd className="text-sm font-medium">{product.measurement}</dd>
+                <dt className="text-sm text-slate-500">Medida</dt>
+                <dd className="text-sm font-semibold text-slate-700">{product.measurement}</dd>
               </div>
             )}
             {product.size && (
               <div className="flex justify-between">
-                <dt className="text-sm text-gray-500">Tamanho</dt>
-                <dd className="text-sm font-medium">{product.size}</dd>
+                <dt className="text-sm text-slate-500">Tamanho</dt>
+                <dd className="text-sm font-semibold text-slate-700">{product.size}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-sm text-gray-500">Preco</dt>
-              <dd className="text-sm font-medium">R$ {product.price.toFixed(2)}</dd>
+              <dt className="text-sm text-slate-500">Preco</dt>
+              <dd className="text-sm font-semibold text-slate-700">R$ {product.price.toFixed(2)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-sm text-gray-500">Quantidade</dt>
-              <dd className={`text-sm font-medium ${product.quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <dt className="text-sm text-slate-500">Quantidade</dt>
+              <dd className={`text-sm font-semibold ${product.quantity > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {product.quantity}
               </dd>
             </div>
             {product.description && (
-              <div className="pt-2 border-t">
-                <dt className="text-sm text-gray-500 mb-1">Descricao</dt>
-                <dd className="text-sm">{product.description}</dd>
+              <div className="border-t border-slate-200 pt-2">
+                <dt className="mb-1 text-sm text-slate-500">Descricao</dt>
+                <dd className="text-sm text-slate-700">{product.description}</dd>
               </div>
             )}
           </dl>
         </div>
 
-        {/* Adjust Quantity */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ajustar Quantidade</h2>
+        <div className="app-card">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Ajustar Quantidade</h2>
           <div className="space-y-3">
             <input
               type="number"
               placeholder="Quantidade (ex: 5 ou -3)"
               value={qtyAmount}
               onChange={(e) => setQtyAmount(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             />
             <input
               type="text"
               placeholder="Motivo (ex: venda, reposicao)"
               value={qtyReason}
               onChange={(e) => setQtyReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             />
-            <button
-              onClick={handleAdjustQuantity}
-              className="w-full py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
-            >
+            <button onClick={handleAdjustQuantity} className="app-button-primary w-full">
               Ajustar
             </button>
           </div>
         </div>
 
-        {/* Photos */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Fotos</h2>
+        <div className="app-card">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Fotos</h2>
 
           {product.photos && product.photos.length > 0 ? (
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -175,7 +170,7 @@ export default function ProductDetail() {
                   />
                   <button
                     onClick={() => handleDeletePhoto(photo.id)}
-                    className="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1 right-1 rounded bg-rose-600 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     X
                   </button>
@@ -183,7 +178,7 @@ export default function ProductDetail() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 mb-4">Nenhuma foto adicionada</p>
+            <p className="mb-4 text-sm text-slate-500">Nenhuma foto adicionada</p>
           )}
 
           <div className="space-y-2">
@@ -192,42 +187,38 @@ export default function ProductDetail() {
               placeholder="ID do arquivo no Google Drive"
               value={photoUrl}
               onChange={(e) => setPhotoUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="form-field"
             />
             <div className="flex gap-2">
               <select
                 value={photoPosition}
                 onChange={(e) => setPhotoPosition(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="form-field max-w-[120px]"
               >
                 <option value="1">Posicao 1</option>
                 <option value="2">Posicao 2</option>
                 <option value="3">Posicao 3</option>
                 <option value="4">Posicao 4</option>
               </select>
-              <button
-                onClick={handleAddPhoto}
-                className="flex-1 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 transition-colors"
-              >
+              <button onClick={handleAddPhoto} className="app-button-secondary flex-1">
                 Adicionar Foto
               </button>
             </div>
           </div>
         </div>
 
-        {/* History */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Historico Recente</h2>
+        <div className="app-card">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Historico Recente</h2>
           {history.length === 0 ? (
-            <p className="text-sm text-gray-500">Sem historico</p>
+            <p className="text-sm text-slate-500">Sem historico</p>
           ) : (
             <div className="space-y-3">
               {history.map((entry) => (
-                <div key={entry.id} className="border-l-2 border-indigo-200 pl-3 py-1">
-                  <p className="text-sm font-medium text-gray-900">
+                <div key={entry.id} className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
+                  <p className="text-sm font-semibold text-slate-800">
                     {formatAction(entry.action)}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-slate-500">
                     {new Date(entry.created_at).toLocaleString('pt-BR')}
                   </p>
                 </div>
