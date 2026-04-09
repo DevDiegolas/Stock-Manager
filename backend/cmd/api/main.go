@@ -101,6 +101,7 @@ func main() {
 			// History
 			r.Route("/history", func(r chi.Router) {
 				r.Get("/", historyHandler.List)
+				r.Delete("/", historyHandler.Clear)
 				r.Get("/product/{productId}", historyHandler.ListByProduct)
 			})
 		})

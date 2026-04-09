@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 const navItems = [
   { to: '/', label: 'Dashboard' },
   { to: '/products', label: 'Produtos' },
-  { to: '/history', label: 'Historico' },
+  { to: '/history', label: 'Histórico' },
 ]
 
 interface SidebarProps {

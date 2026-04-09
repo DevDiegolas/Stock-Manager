@@ -5,6 +5,7 @@ import { historyService } from '../services/historyService'
 import type { Product } from '../types/product'
 import type { HistoryEntry } from '../types/history'
 import { Skeleton } from '../components/ui/Skeleton'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
 
 export default function ProductDetail() {
@@ -14,6 +15,7 @@ export default function ProductDetail() {
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [activeSlide, setActiveSlide] = useState(0)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -27,7 +29,7 @@ export default function ProductDetail() {
   }, [id])
 
   const handleDelete = async () => {
-    if (!id || !confirm('Tem certeza que deseja REMOVER este produto permanentemente?')) return
+    if (!id) return
     await productService.delete(id)
     navigate('/products')
   }
@@ -51,7 +53,7 @@ export default function ProductDetail() {
       </div>
     )
   }
-  if (!product) return <div className="app-empty text-slate-600">Produto nao encontrado</div>
+  if (!product) return <div className="app-empty text-slate-600">Produto não encontrado</div>
 
   const photos = product.photos || []
 
@@ -61,7 +63,7 @@ export default function ProductDetail() {
         <div>
           <span className="pill-badge">Detalhes</span>
           <h1 className="page-title mt-3">{product.name}</h1>
-          <p className="page-subtitle">Informacoes, fotos e historico deste produto.</p>
+          <p className="page-subtitle">Informações, fotos e histórico deste produto.</p>
         </div>
         <div className="flex gap-2">
           <Link to={`/products/${id}/edit`} className="app-button-primary">
@@ -78,13 +80,25 @@ export default function ProductDetail() {
             {product.active ? 'Inativar' : 'Ativar'}
           </button>
           <button
-            onClick={handleDelete}
+            onClick={() => setShowDeleteModal(true)}
             className="rounded-xl border border-rose-300/70 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
           >
             Remover
           </button>
         </div>
       </div>
+
+      {showDeleteModal && (
+        <ConfirmModal
+          title="Remover produto"
+          description={`O produto "${product.name}" será removido permanentemente junto com suas fotos e dados. Essa ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          cancelLabel="Cancelar"
+          variant="danger"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Detalhes */}
@@ -112,7 +126,7 @@ export default function ProductDetail() {
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Preco</dt>
+              <dt className="text-sm text-slate-500">Preço</dt>
               <dd className="text-sm font-semibold text-slate-700">R$ {product.price.toFixed(2)}</dd>
             </div>
             <div className="flex justify-between">
@@ -123,7 +137,7 @@ export default function ProductDetail() {
             </div>
             {product.description && (
               <div className="border-t border-slate-200 pt-2">
-                <dt className="mb-1 text-sm text-slate-500">Descricao</dt>
+                <dt className="mb-1 text-sm text-slate-500">Descrição</dt>
                 <dd className="text-sm text-slate-700">{product.description}</dd>
               </div>
             )}
@@ -206,11 +220,11 @@ export default function ProductDetail() {
           )}
         </div>
 
-        {/* Historico Recente */}
+        {/* Histórico Recente */}
         <div className="app-card lg:col-span-2">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Historico Recente</h2>
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Histórico Recente</h2>
           {history.length === 0 ? (
-            <p className="text-sm text-slate-500">Sem historico</p>
+            <p className="text-sm text-slate-500">Sem histórico</p>
           ) : (
             <div className="space-y-3">
               {history.map((entry) => (

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { productService } from '../services/productService'
 import type { ProductPhoto } from '../types/product'
 
-const categories = ['Biquini', 'Calcinha', 'Sunga', 'Maio', 'Saida de Praia', 'Outro']
+const categories = ['Biquíni', 'Calcinha', 'Sunga', 'Maiô', 'Saída de Praia', 'Outro']
 
 interface PhotoSlot {
   driveFileId: string
@@ -145,7 +145,7 @@ export default function ProductForm() {
       <div className="mb-6">
         <span className="pill-badge">Produto</span>
         <h1 className="page-title mt-3">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h1>
-        <p className="page-subtitle">Preencha os dados e adicione fotos para manter seu catalogo completo.</p>
+        <p className="page-subtitle">Preencha os dados e adicione fotos para manter seu catálogo completo.</p>
       </div>
 
       {error && (
@@ -155,7 +155,7 @@ export default function ProductForm() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left - Form Fields */}
         <div className="app-card space-y-4">
-          <h2 className="font-display text-xl font-bold text-brand-night">Informacoes</h2>
+          <h2 className="font-display text-xl font-bold text-brand-night">Informações</h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -218,7 +218,7 @@ export default function ProductForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Preco (R$)</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Preço (R$)</label>
               <input
                 name="price"
                 type="number"
@@ -247,7 +247,7 @@ export default function ProductForm() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Descricao</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
             <textarea
               name="description"
               value={form.description}

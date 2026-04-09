@@ -34,7 +34,7 @@ export default function Products() {
     <div className="page-shell">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <span className="pill-badge">Catalogo</span>
+          <span className="pill-badge">Catálogo</span>
           <h1 className="page-title mt-3">Produtos</h1>
           <p className="page-subtitle">Busque, acompanhe e entre no detalhe de cada item.</p>
         </div>
@@ -80,7 +80,7 @@ export default function Products() {
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Categoria</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Cor</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tamanho</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Preco</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Preço</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</th>
                 </tr>
               </thead>
@@ -126,7 +126,7 @@ export default function Products() {
                 disabled={page === totalPages}
                 className="app-button-secondary disabled:opacity-50"
               >
-                Proximo
+                Próximo
               </button>
             </div>
           )}

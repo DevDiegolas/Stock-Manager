@@ -37,6 +37,17 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) Clear(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	if err := h.service.Clear(userID); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to clear history"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"message": "history cleared"})
+}
+
 func (h *Handler) ListByProduct(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	productID := chi.URLParam(r, "productId")
