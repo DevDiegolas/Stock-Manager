@@ -49,6 +49,24 @@ func (s *Service) Create(userID string, req CreateProductRequest) (*Product, err
 		"quantity": p.Quantity,
 	})
 
+	// Attach photos if provided
+	for _, photoReq := range req.Photos {
+		if photoReq.DriveFileID == "" || photoReq.Position < 1 || photoReq.Position > 4 {
+			continue
+		}
+		photo := &ProductPhoto{
+			ProductID:   p.ID,
+			DriveFileID: photoReq.DriveFileID,
+			Position:    photoReq.Position,
+		}
+		s.repo.AddPhoto(photo)
+	}
+
+	if len(req.Photos) > 0 {
+		photos, _ := s.repo.GetPhotos(p.ID)
+		p.Photos = photos
+	}
+
 	return p, nil
 }
 
@@ -114,7 +132,7 @@ func (s *Service) Delete(id, userID string) error {
 		return err
 	}
 
-	if err := s.repo.SoftDelete(id, userID); err != nil {
+	if err := s.repo.HardDelete(id, userID); err != nil {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
 
@@ -123,6 +141,30 @@ func (s *Service) Delete(id, userID string) error {
 	})
 
 	return nil
+}
+
+func (s *Service) ToggleActive(id, userID string) (*Product, error) {
+	p, err := s.repo.GetByID(id, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	newActive := !p.Active
+	if err := s.repo.ToggleActive(id, userID, newActive); err != nil {
+		return nil, fmt.Errorf("failed to toggle active: %w", err)
+	}
+
+	action := "PRODUCT_ACTIVATED"
+	if !newActive {
+		action = "PRODUCT_DEACTIVATED"
+	}
+	s.recordHistory(userID, id, action, map[string]interface{}{
+		"name":   p.Name,
+		"active": newActive,
+	})
+
+	p.Active = newActive
+	return p, nil
 }
 
 func (s *Service) AdjustQuantity(id, userID string, req AdjustQuantityRequest) (*Product, error) {

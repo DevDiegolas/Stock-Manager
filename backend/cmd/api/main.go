@@ -92,6 +92,7 @@ func main() {
 				r.Get("/{id}", productHandler.GetByID)
 				r.Put("/{id}", productHandler.Update)
 				r.Delete("/{id}", productHandler.Delete)
+				r.Patch("/{id}/toggle-active", productHandler.ToggleActive)
 				r.Post("/{id}/quantity", productHandler.AdjustQuantity)
 				r.Post("/{id}/photos", productHandler.AddPhoto)
 				r.Delete("/{id}/photos/{photoId}", productHandler.DeletePhoto)

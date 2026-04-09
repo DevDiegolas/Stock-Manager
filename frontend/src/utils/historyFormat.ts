@@ -35,6 +35,8 @@ export function formatHistoryAction(action: string): string {
     PRODUCT_CREATED: 'Produto criado',
     PRODUCT_UPDATED: 'Produto atualizado',
     PRODUCT_DELETED: 'Produto removido',
+    PRODUCT_ACTIVATED: 'Produto ativado',
+    PRODUCT_DEACTIVATED: 'Produto inativado',
     QUANTITY_ADDED: 'Quantidade adicionada',
     QUANTITY_REMOVED: 'Quantidade removida',
   }
@@ -78,6 +80,11 @@ export function formatHistoryDetails(action: string, details?: Record<string, un
     ].filter(Boolean) as string[]
 
     return lines
+  }
+
+  if (action === 'PRODUCT_ACTIVATED' || action === 'PRODUCT_DEACTIVATED') {
+    const name = asString(data.name)
+    return name ? [`Produto: ${name}`] : []
   }
 
   if (action === 'PRODUCT_UPDATED') {

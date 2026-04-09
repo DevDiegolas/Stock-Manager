@@ -123,9 +123,18 @@ func (r *Repository) UpdateQuantity(id, userID string, quantity int) error {
 	return err
 }
 
-func (r *Repository) SoftDelete(id, userID string) error {
-	query := `UPDATE products SET active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2`
-	_, err := r.db.Exec(query, id, userID)
+func (r *Repository) HardDelete(id, userID string) error {
+	_, err := r.db.Exec(`DELETE FROM product_photos WHERE product_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Exec(`DELETE FROM products WHERE id = $1 AND user_id = $2`, id, userID)
+	return err
+}
+
+func (r *Repository) ToggleActive(id, userID string, active bool) error {
+	query := `UPDATE products SET active = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`
+	_, err := r.db.Exec(query, active, id, userID)
 	return err
 }
 

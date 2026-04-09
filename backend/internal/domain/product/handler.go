@@ -125,6 +125,19 @@ func (h *Handler) AdjustQuantity(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, product)
 }
 
+func (h *Handler) ToggleActive(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+	productID := chi.URLParam(r, "id")
+
+	product, err := h.service.ToggleActive(productID, userID)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, product)
+}
+
 func (h *Handler) AddPhoto(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r.Context())
 	productID := chi.URLParam(r, "id")

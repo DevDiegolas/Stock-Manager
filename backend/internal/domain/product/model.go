@@ -28,14 +28,15 @@ type ProductPhoto struct {
 }
 
 type CreateProductRequest struct {
-	Name        string  `json:"name"`
-	Category    string  `json:"category"`
-	Measurement *string `json:"measurement,omitempty"`
-	Size        *string `json:"size,omitempty"`
-	Color       string  `json:"color"`
-	Price       float64 `json:"price"`
-	Description *string `json:"description,omitempty"`
-	Quantity    int     `json:"quantity"`
+	Name        string            `json:"name"`
+	Category    string            `json:"category"`
+	Measurement *string           `json:"measurement,omitempty"`
+	Size        *string           `json:"size,omitempty"`
+	Color       string            `json:"color"`
+	Price       float64           `json:"price"`
+	Description *string           `json:"description,omitempty"`
+	Quantity    int               `json:"quantity"`
+	Photos      []AddPhotoRequest `json:"photos,omitempty"`
 }
 
 type UpdateProductRequest struct {
