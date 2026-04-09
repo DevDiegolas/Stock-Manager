@@ -1,7 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --bg-1: #fff7ed;
+  --bg-2: #ecfeff;
+  --ink: #0f172a;
+}
+
 body {
-  @apply bg-gray-50 text-gray-900 antialiased;
+  @apply font-body text-brand-night antialiased;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 107, 61, 0.16), transparent 34%),
+    radial-gradient(circle at 100% 0%, rgba(30, 203, 225, 0.16), transparent 35%),
+    linear-gradient(140deg, var(--bg-1), var(--bg-2));
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.auth-stage {
+  @apply relative min-h-screen overflow-hidden;
+}
+
+.auth-orb {
+  @apply absolute rounded-full blur-3xl opacity-60;
+}
+
+.auth-card {
+  @apply relative overflow-hidden rounded-3xl border border-white/60 bg-white/80 p-8 shadow-panel backdrop-blur-xl;
+}
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+}
+
+.form-field {
+  @apply w-full rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-sm text-brand-night outline-none transition-all duration-300;
+}
+
+.form-field:focus {
+  @apply border-brand-aqua shadow-neon;
+}
+
+.auth-action {
+  @apply w-full rounded-xl bg-gradient-to-r from-brand-ember to-brand-aqua px-4 py-3 text-sm font-semibold text-white transition-all duration-300;
+}
+
+.auth-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(255, 107, 61, 0.3);
+}
+
+.auth-action:active {
+  transform: translateY(0);
+}
+
+.delayed-1 {
+  animation-delay: 100ms;
+}
+
+.delayed-2 {
+  animation-delay: 180ms;
+}
+
+.delayed-3 {
+  animation-delay: 260ms;
 }
