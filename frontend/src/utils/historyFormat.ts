@@ -23,7 +23,6 @@ function titleize(field: string): string {
     price: 'Preço',
     measurement: 'Medida',
     size: 'Tamanho',
-    description: 'Descrição',
     quantity: 'Quantidade',
   }
 

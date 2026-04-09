@@ -59,16 +59,16 @@ export default function Dashboard() {
           <p className="mt-2 font-display text-4xl font-bold text-brand-night">{stats.total}</p>
           <p className="mt-1 text-xs text-slate-500">Catálogo completo cadastrado</p>
         </div>
-        <div className="app-card animate-revealUp delayed-2">
+        <Link to="/products?filter=active" className="app-card animate-revealUp delayed-2 transition-shadow hover:shadow-lg cursor-pointer">
           <p className="text-xs uppercase tracking-wide text-slate-500">Produtos Ativos</p>
           <p className="mt-2 font-display text-4xl font-bold text-emerald-600">{stats.active}</p>
           <p className="mt-1 text-xs text-slate-500">Disponíveis para venda</p>
-        </div>
-        <div className="app-card animate-revealUp delayed-3">
+        </Link>
+        <Link to="/products?filter=inactive" className="app-card animate-revealUp delayed-3 transition-shadow hover:shadow-lg cursor-pointer">
           <p className="text-xs uppercase tracking-wide text-slate-500">Produtos Inativos</p>
           <p className="mt-2 font-display text-4xl font-bold text-rose-600">{stats.inactive}</p>
           <p className="mt-1 text-xs text-slate-500">Itens fora de circulação</p>
-        </div>
+        </Link>
       </div>
 
       <div className="flex flex-wrap gap-3">

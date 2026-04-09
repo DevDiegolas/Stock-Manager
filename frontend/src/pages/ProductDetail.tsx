@@ -135,12 +135,6 @@ export default function ProductDetail() {
                 {product.quantity}
               </dd>
             </div>
-            {product.description && (
-              <div className="border-t border-slate-200 pt-2">
-                <dt className="mb-1 text-sm text-slate-500">Descrição</dt>
-                <dd className="text-sm text-slate-700">{product.description}</dd>
-              </div>
-            )}
           </dl>
         </div>
 

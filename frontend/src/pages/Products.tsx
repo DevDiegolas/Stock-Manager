@@ -1,20 +1,41 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { productService } from '../services/productService'
 import type { Product } from '../types/product'
 import { Skeleton } from '../components/ui/Skeleton'
 
+type ActiveFilter = 'all' | 'active' | 'inactive'
+
 export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const loadProducts = async (p: number, s: string) => {
+  const filterParam = searchParams.get('filter')
+  const filter: ActiveFilter = filterParam === 'active' || filterParam === 'inactive' ? filterParam : 'all'
+
+  const setFilter = (f: ActiveFilter) => {
+    if (f === 'all') {
+      searchParams.delete('filter')
+    } else {
+      searchParams.set('filter', f)
+    }
+    setSearchParams(searchParams, { replace: true })
+    setPage(1)
+  }
+
+  const loadProducts = async (p: number, s: string, f: ActiveFilter) => {
     setLoading(true)
     try {
-      const resp = await productService.list({ page: p, limit: 20, search: s, active: true })
+      const params: { page: number; limit: number; search: string; active?: boolean } = {
+        page: p, limit: 20, search: s,
+      }
+      if (f === 'active') params.active = true
+      if (f === 'inactive') params.active = false
+      const resp = await productService.list(params)
       setProducts(resp.products)
       setTotal(resp.total)
     } catch {
@@ -25,8 +46,8 @@ export default function Products() {
   }
 
   useEffect(() => {
-    loadProducts(page, search)
-  }, [page, search])
+    loadProducts(page, search, filter)
+  }, [page, search, filter])
 
   const totalPages = Math.ceil(total / 20)
 
@@ -43,7 +64,7 @@ export default function Products() {
         </Link>
       </div>
 
-      <div className="mb-5 max-w-lg animate-revealUp delayed-1">
+      <div className="mb-5 flex flex-wrap items-center gap-3 animate-revealUp delayed-1">
         <input
           type="text"
           placeholder="Buscar produtos..."
@@ -52,8 +73,40 @@ export default function Products() {
             setSearch(e.target.value)
             setPage(1)
           }}
-          className="form-field"
+          className="form-field max-w-lg"
         />
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+              filter === 'all'
+                ? 'bg-brand-night text-white shadow-glow'
+                : 'border border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFilter('active')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+              filter === 'active'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'border border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            Ativos
+          </button>
+          <button
+            onClick={() => setFilter('inactive')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+              filter === 'inactive'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'border border-slate-200 bg-white/80 text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            Inativos
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -80,6 +133,7 @@ export default function Products() {
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Categoria</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Cor</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">Tamanho</th>
+                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">Status</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Preço</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">Qtd</th>
                 </tr>
@@ -95,6 +149,15 @@ export default function Products() {
                     <td className="px-6 py-4 text-sm text-slate-600">{p.category}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{p.color}</td>
                     <td className="px-6 py-4 text-sm text-slate-600">{p.size || p.measurement || '-'}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex rounded-full px-3 py-0.5 text-xs font-semibold ${
+                        p.active
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-rose-50 text-rose-600'
+                      }`}>
+                        {p.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-right text-sm font-semibold text-slate-800">
                       R$ {p.price.toFixed(2)}
                     </td>

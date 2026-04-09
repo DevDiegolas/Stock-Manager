@@ -23,7 +23,6 @@ export default function ProductForm() {
     size: '',
     color: '',
     price: '',
-    description: '',
     quantity: '0',
   })
   const [photos, setPhotos] = useState<PhotoSlot[]>([])
@@ -42,7 +41,6 @@ export default function ProductForm() {
           size: p.size || '',
           color: p.color,
           price: p.price.toString(),
-          description: p.description || '',
           quantity: p.quantity.toString(),
         })
         if (p.photos && p.photos.length > 0) {
@@ -72,7 +70,6 @@ export default function ProductForm() {
           size: form.size || undefined,
           color: form.color,
           price: parseFloat(form.price),
-          description: form.description || undefined,
         })
         // Sync photos for edit mode - add new ones that don't have an id
         for (const photo of photos) {
@@ -88,7 +85,6 @@ export default function ProductForm() {
           size: form.size || undefined,
           color: form.color,
           price: parseFloat(form.price),
-          description: form.description || undefined,
           quantity: parseInt(form.quantity) || 0,
           photos: photos.map((p) => ({
             drive_file_id: p.driveFileId,
@@ -244,17 +240,6 @@ export default function ProductForm() {
                 />
               </div>
             )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Descrição</label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows={3}
-              className="form-field resize-none"
-            />
           </div>
 
           <div className="flex gap-3 pt-4">
