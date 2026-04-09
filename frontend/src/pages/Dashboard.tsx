@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { productService } from '../services/productService'
+import { Skeleton } from '../components/ui/Skeleton'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 })
@@ -28,7 +29,20 @@ export default function Dashboard() {
   }, [])
 
   if (loading) {
-    return <div className="animate-pulse text-slate-600">Carregando...</div>
+    return (
+      <div className="space-y-5">
+        <Skeleton className="h-6 w-48" />
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-36" />
+        </div>
+        <div className="flex gap-3">
+          <Skeleton className="h-11 w-36" />
+          <Skeleton className="h-11 w-32" />
+        </div>
+      </div>
+    )
   }
 
   return (

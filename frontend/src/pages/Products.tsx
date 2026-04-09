@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { productService } from '../services/productService'
 import type { Product } from '../types/product'
+import { Skeleton } from '../components/ui/Skeleton'
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([])
@@ -56,7 +57,12 @@ export default function Products() {
       </div>
 
       {loading ? (
-        <div className="animate-pulse text-slate-600">Carregando...</div>
+        <div className="space-y-3">
+          <Skeleton className="h-12" />
+          <Skeleton className="h-12" />
+          <Skeleton className="h-12" />
+          <Skeleton className="h-12" />
+        </div>
       ) : products.length === 0 ? (
         <div className="app-empty text-slate-500">
           <p className="text-lg font-medium text-slate-600">Nenhum produto encontrado</p>

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 
 const navItems = [
@@ -7,11 +8,16 @@ const navItems = [
   { to: '/history', label: 'Historico' },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen: boolean
+  onCloseMobile: () => void
+}
+
+function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="relative z-20 hidden min-h-screen w-72 border-r border-white/60 bg-brand-night px-4 py-6 text-white shadow-2xl lg:flex lg:flex-col">
+    <div className="flex h-full min-h-screen w-72 flex-col border-r border-white/60 bg-brand-night px-4 py-6 text-white shadow-2xl">
       <div className="mb-8 border-b border-white/10 pb-6">
         <p className="mb-2 text-xs uppercase tracking-[0.22em] text-white/60">Stock Platform</p>
         <h1 className="font-display text-2xl font-bold text-white">Stock Manager</h1>
@@ -24,6 +30,7 @@ export function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            onClick={onNavigate}
             className={({ isActive }) =>
               `group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
                 isActive
@@ -44,12 +51,51 @@ export function Sidebar() {
           <p className="mt-1 truncate font-medium text-white">{user?.email}</p>
         </div>
         <button
-          onClick={logout}
+          onClick={() => {
+            logout()
+            onNavigate?.()
+          }}
           className="mt-3 w-full rounded-xl border border-red-300/30 px-4 py-2.5 text-left text-sm font-medium text-red-200 transition-colors hover:bg-red-400/20 hover:text-red-100"
         >
           Sair
         </button>
       </div>
-    </aside>
+    </div>
+  )
+}
+
+export function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps) {
+  return (
+    <>
+      <aside className="relative z-20 hidden lg:flex">
+        <SidebarContent />
+      </aside>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="Fechar menu"
+              className="fixed inset-0 z-30 bg-brand-night/45 backdrop-blur-sm lg:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onCloseMobile}
+            />
+
+            <motion.aside
+              className="fixed inset-y-0 left-0 z-40 lg:hidden"
+              initial={{ x: -320 }}
+              animate={{ x: 0 }}
+              exit={{ x: -320 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <SidebarContent onNavigate={onCloseMobile} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }

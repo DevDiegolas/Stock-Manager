@@ -4,6 +4,8 @@ import { productService } from '../services/productService'
 import { historyService } from '../services/historyService'
 import type { Product } from '../types/product'
 import type { HistoryEntry } from '../types/history'
+import { Skeleton } from '../components/ui/Skeleton'
+import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
@@ -66,7 +68,19 @@ export default function ProductDetail() {
     navigate('/products')
   }
 
-  if (loading) return <div className="animate-pulse text-slate-600">Carregando...</div>
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Skeleton className="h-56" />
+          <Skeleton className="h-56" />
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    )
+  }
   if (!product) return <div className="app-empty text-slate-600">Produto nao encontrado</div>
 
   return (
@@ -216,8 +230,11 @@ export default function ProductDetail() {
               {history.map((entry) => (
                 <div key={entry.id} className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
                   <p className="text-sm font-semibold text-slate-800">
-                    {formatAction(entry.action)}
+                    {formatHistoryAction(entry.action)}
                   </p>
+                  {formatHistoryDetails(entry.action, entry.details).map((line) => (
+                    <p key={line} className="text-xs text-slate-600">{line}</p>
+                  ))}
                   <p className="text-xs text-slate-500">
                     {new Date(entry.created_at).toLocaleString('pt-BR')}
                   </p>
@@ -229,15 +246,4 @@ export default function ProductDetail() {
       </div>
     </div>
   )
-}
-
-function formatAction(action: string): string {
-  const map: Record<string, string> = {
-    PRODUCT_CREATED: 'Produto criado',
-    PRODUCT_UPDATED: 'Produto atualizado',
-    PRODUCT_DELETED: 'Produto removido',
-    QUANTITY_ADDED: 'Quantidade adicionada',
-    QUANTITY_REMOVED: 'Quantidade removida',
-  }
-  return map[action] || action
 }

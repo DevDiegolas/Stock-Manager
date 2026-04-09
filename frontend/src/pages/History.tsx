@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { historyService } from '../services/historyService'
 import type { HistoryEntry } from '../types/history'
+import { Skeleton } from '../components/ui/Skeleton'
+import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
 
 export default function History() {
   const [entries, setEntries] = useState<HistoryEntry[]>([])
@@ -20,18 +22,26 @@ export default function History() {
 
   const totalPages = Math.ceil(total / 20)
 
-  const formatAction = (action: string) => {
-    const map: Record<string, { label: string; color: string }> = {
-      PRODUCT_CREATED: { label: 'Produto criado', color: 'bg-green-100 text-green-700' },
-      PRODUCT_UPDATED: { label: 'Produto atualizado', color: 'bg-blue-100 text-blue-700' },
-      PRODUCT_DELETED: { label: 'Produto removido', color: 'bg-red-100 text-red-700' },
-      QUANTITY_ADDED: { label: 'Quantidade adicionada', color: 'bg-emerald-100 text-emerald-700' },
-      QUANTITY_REMOVED: { label: 'Quantidade removida', color: 'bg-orange-100 text-orange-700' },
+  const formatBadge = (action: string) => {
+    const map: Record<string, { color: string }> = {
+      PRODUCT_CREATED: { color: 'bg-green-100 text-green-700' },
+      PRODUCT_UPDATED: { color: 'bg-blue-100 text-blue-700' },
+      PRODUCT_DELETED: { color: 'bg-red-100 text-red-700' },
+      QUANTITY_ADDED: { color: 'bg-emerald-100 text-emerald-700' },
+      QUANTITY_REMOVED: { color: 'bg-orange-100 text-orange-700' },
     }
-    return map[action] || { label: action, color: 'bg-gray-100 text-gray-700' }
+    return map[action] || { color: 'bg-gray-100 text-gray-700' }
   }
 
-  if (loading) return <div className="animate-pulse">Carregando...</div>
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+        <Skeleton className="h-24" />
+      </div>
+    )
+  }
 
   return (
     <div className="page-shell">
@@ -49,17 +59,20 @@ export default function History() {
         <>
           <div className="space-y-3">
             {entries.map((entry) => {
-              const { label, color } = formatAction(entry.action)
+              const { color } = formatBadge(entry.action)
+              const details = formatHistoryDetails(entry.action, entry.details)
               return (
                 <div key={entry.id} className="app-card flex items-center justify-between gap-4 p-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${color}`}>
-                      {label}
+                      {formatHistoryAction(entry.action)}
                     </span>
-                    {entry.details && (
-                      <span className="text-sm text-slate-600">
-                        {JSON.stringify(entry.details)}
-                      </span>
+                    {details.length > 0 && (
+                      <ul className="space-y-1">
+                        {details.map((line) => (
+                          <li key={line} className="text-sm text-slate-600">{line}</li>
+                        ))}
+                      </ul>
                     )}
                   </div>
                   <span className="text-xs font-medium text-slate-500">
