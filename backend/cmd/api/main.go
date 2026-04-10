@@ -10,6 +10,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
+	"github.com/DevDiegolas/Stock-Manager/backend/internal/domain/catalog"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/domain/history"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/domain/product"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/domain/user"
@@ -55,6 +56,10 @@ func main() {
 	productService := product.NewService(productRepo, historyRepo)
 	productHandler := product.NewHandler(productService)
 
+	catalogRepo := catalog.NewRepository(db)
+	catalogService := catalog.NewService(catalogRepo, productRepo)
+	catalogHandler := catalog.NewHandler(catalogService)
+
 	// Setup router
 	r := chi.NewRouter()
 
@@ -81,6 +86,9 @@ func main() {
 			})
 		})
 
+		// Public catalog
+		r.Get("/catalog/{slug}", catalogHandler.GetPublicCatalog)
+
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Auth(jwtService))
@@ -96,6 +104,12 @@ func main() {
 				r.Post("/{id}/quantity", productHandler.AdjustQuantity)
 				r.Post("/{id}/photos", productHandler.AddPhoto)
 				r.Delete("/{id}/photos/{photoId}", productHandler.DeletePhoto)
+			})
+
+			// Catalog settings
+			r.Route("/catalog", func(r chi.Router) {
+				r.Get("/settings", catalogHandler.GetSettings)
+				r.Put("/settings", catalogHandler.SaveSettings)
 			})
 
 			// History

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Repository struct {
@@ -170,4 +171,22 @@ func (r *Repository) CountPhotos(productID string) (int, error) {
 	query := `SELECT COUNT(*) FROM product_photos WHERE product_id = $1`
 	err := r.db.Get(&count, query, productID)
 	return count, err
+}
+
+func (r *Repository) GetPhotosByProductIDs(ids []string) (map[string][]ProductPhoto, error) {
+	if len(ids) == 0 {
+		return map[string][]ProductPhoto{}, nil
+	}
+
+	query := `SELECT * FROM product_photos WHERE product_id = ANY($1) ORDER BY position`
+	var photos []ProductPhoto
+	if err := r.db.Select(&photos, query, pq.Array(ids)); err != nil {
+		return nil, fmt.Errorf("failed to load photos: %w", err)
+	}
+
+	result := make(map[string][]ProductPhoto)
+	for _, p := range photos {
+		result[p.ProductID] = append(result[p.ProductID], p)
+	}
+	return result, nil
 }
