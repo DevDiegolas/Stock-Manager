@@ -86,8 +86,8 @@ func main() {
 			})
 		})
 
-		// Public catalog
-		r.Get("/catalog/{slug}", catalogHandler.GetPublicCatalog)
+		// Public catalog (no auth)
+		r.Get("/public/catalog/{slug}", catalogHandler.GetPublicCatalog)
 
 		// Protected routes
 		r.Group(func(r chi.Router) {

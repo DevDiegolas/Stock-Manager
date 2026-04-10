@@ -13,7 +13,7 @@ export const catalogService = {
   },
 
   async getPublicCatalog(slug: string): Promise<PublicCatalog> {
-    const response = await publicApi.get<PublicCatalog>(`/catalog/${slug}`)
+    const response = await publicApi.get<PublicCatalog>(`/public/catalog/${slug}`)
     return response.data
   },
 }
