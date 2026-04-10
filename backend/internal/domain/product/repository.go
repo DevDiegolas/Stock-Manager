@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Repository struct {
@@ -123,9 +124,18 @@ func (r *Repository) UpdateQuantity(id, userID string, quantity int) error {
 	return err
 }
 
-func (r *Repository) SoftDelete(id, userID string) error {
-	query := `UPDATE products SET active = FALSE, updated_at = NOW() WHERE id = $1 AND user_id = $2`
-	_, err := r.db.Exec(query, id, userID)
+func (r *Repository) HardDelete(id, userID string) error {
+	_, err := r.db.Exec(`DELETE FROM product_photos WHERE product_id = $1`, id)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Exec(`DELETE FROM products WHERE id = $1 AND user_id = $2`, id, userID)
+	return err
+}
+
+func (r *Repository) ToggleActive(id, userID string, active bool) error {
+	query := `UPDATE products SET active = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`
+	_, err := r.db.Exec(query, active, id, userID)
 	return err
 }
 
@@ -161,4 +171,22 @@ func (r *Repository) CountPhotos(productID string) (int, error) {
 	query := `SELECT COUNT(*) FROM product_photos WHERE product_id = $1`
 	err := r.db.Get(&count, query, productID)
 	return count, err
+}
+
+func (r *Repository) GetPhotosByProductIDs(ids []string) (map[string][]ProductPhoto, error) {
+	if len(ids) == 0 {
+		return map[string][]ProductPhoto{}, nil
+	}
+
+	query := `SELECT * FROM product_photos WHERE product_id = ANY($1) ORDER BY position`
+	var photos []ProductPhoto
+	if err := r.db.Select(&photos, query, pq.Array(ids)); err != nil {
+		return nil, fmt.Errorf("failed to load photos: %w", err)
+	}
+
+	result := make(map[string][]ProductPhoto)
+	for _, p := range photos {
+		result[p.ProductID] = append(result[p.ProductID], p)
+	}
+	return result, nil
 }

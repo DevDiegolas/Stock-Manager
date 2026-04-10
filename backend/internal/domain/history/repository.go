@@ -23,6 +23,11 @@ func (r *Repository) Create(e *Entry) error {
 		Scan(&e.ID, &e.CreatedAt)
 }
 
+func (r *Repository) Clear(userID string) error {
+	_, err := r.db.Exec(`DELETE FROM history WHERE user_id = $1`, userID)
+	return err
+}
+
 func (r *Repository) List(userID string, params ListParams) (*ListResponse, error) {
 	if params.Page < 1 {
 		params.Page = 1

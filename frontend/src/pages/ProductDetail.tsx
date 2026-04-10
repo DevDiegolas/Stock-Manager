@@ -5,6 +5,7 @@ import { historyService } from '../services/historyService'
 import type { Product } from '../types/product'
 import type { HistoryEntry } from '../types/history'
 import { Skeleton } from '../components/ui/Skeleton'
+import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
 
 export default function ProductDetail() {
@@ -13,10 +14,8 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
-  const [qtyAmount, setQtyAmount] = useState('')
-  const [qtyReason, setQtyReason] = useState('')
-  const [photoUrl, setPhotoUrl] = useState('')
-  const [photoPosition, setPhotoPosition] = useState('1')
+  const [activeSlide, setActiveSlide] = useState(0)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -29,43 +28,18 @@ export default function ProductDetail() {
     }).finally(() => setLoading(false))
   }, [id])
 
-  const handleAdjustQuantity = async () => {
-    if (!id || !qtyAmount) return
-    try {
-      const updated = await productService.adjustQuantity(id, parseInt(qtyAmount), qtyReason)
-      setProduct(updated)
-      setQtyAmount('')
-      setQtyReason('')
-      const h = await historyService.listByProduct(id, { limit: 10 })
-      setHistory(h.entries)
-    } catch {
-      // ignore
-    }
-  }
-
-  const handleAddPhoto = async () => {
-    if (!id || !photoUrl) return
-    try {
-      await productService.addPhoto(id, photoUrl, parseInt(photoPosition))
-      const updated = await productService.getById(id)
-      setProduct(updated)
-      setPhotoUrl('')
-    } catch {
-      // ignore
-    }
-  }
-
-  const handleDeletePhoto = async (photoId: string) => {
-    if (!id) return
-    await productService.deletePhoto(id, photoId)
-    const updated = await productService.getById(id)
-    setProduct(updated)
-  }
-
   const handleDelete = async () => {
-    if (!id || !confirm('Tem certeza que deseja remover este produto?')) return
+    if (!id) return
     await productService.delete(id)
     navigate('/products')
+  }
+
+  const handleToggleActive = async () => {
+    if (!id) return
+    const updated = await productService.toggleActive(id)
+    setProduct(updated)
+    const h = await historyService.listByProduct(id, { limit: 10 })
+    setHistory(h.entries)
   }
 
   if (loading) {
@@ -75,13 +49,13 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Skeleton className="h-56" />
           <Skeleton className="h-56" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
         </div>
       </div>
     )
   }
-  if (!product) return <div className="app-empty text-slate-600">Produto nao encontrado</div>
+  if (!product) return <div className="app-empty text-slate-600">Produto não encontrado</div>
+
+  const photos = product.photos || []
 
   return (
     <div className="page-shell max-w-5xl">
@@ -89,14 +63,24 @@ export default function ProductDetail() {
         <div>
           <span className="pill-badge">Detalhes</span>
           <h1 className="page-title mt-3">{product.name}</h1>
-          <p className="page-subtitle">Acompanhe informacoes, estoque, fotos e historico deste produto.</p>
+          <p className="page-subtitle">Informações, fotos e histórico deste produto.</p>
         </div>
         <div className="flex gap-2">
           <Link to={`/products/${id}/edit`} className="app-button-primary">
             Editar
           </Link>
           <button
-            onClick={handleDelete}
+            onClick={handleToggleActive}
+            className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+              product.active
+                ? 'border-amber-300/70 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-emerald-300/70 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            }`}
+          >
+            {product.active ? 'Inativar' : 'Ativar'}
+          </button>
+          <button
+            onClick={() => setShowDeleteModal(true)}
             className="rounded-xl border border-rose-300/70 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
           >
             Remover
@@ -104,10 +88,23 @@ export default function ProductDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="app-card">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Detalhes</h2>
-          <dl className="space-y-3">
+      {showDeleteModal && (
+        <ConfirmModal
+          title="Remover produto"
+          description={`O produto "${product.name}" será removido permanentemente junto com suas fotos e dados. Essa ação não pode ser desfeita.`}
+          confirmLabel="Remover"
+          cancelLabel="Cancelar"
+          variant="danger"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Detalhes */}
+        <div className="app-card !p-4">
+          <h2 className="mb-3 font-display text-lg font-bold text-brand-night">Detalhes</h2>
+          <dl className="space-y-2">
             <div className="flex justify-between">
               <dt className="text-sm text-slate-500">Categoria</dt>
               <dd className="text-sm font-semibold text-slate-700">{product.category}</dd>
@@ -129,7 +126,7 @@ export default function ProductDetail() {
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Preco</dt>
+              <dt className="text-sm text-slate-500">Preço</dt>
               <dd className="text-sm font-semibold text-slate-700">R$ {product.price.toFixed(2)}</dd>
             </div>
             <div className="flex justify-between">
@@ -138,93 +135,90 @@ export default function ProductDetail() {
                 {product.quantity}
               </dd>
             </div>
-            {product.description && (
-              <div className="border-t border-slate-200 pt-2">
-                <dt className="mb-1 text-sm text-slate-500">Descricao</dt>
-                <dd className="text-sm text-slate-700">{product.description}</dd>
-              </div>
-            )}
           </dl>
         </div>
 
-        <div className="app-card">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Ajustar Quantidade</h2>
-          <div className="space-y-3">
-            <input
-              type="number"
-              placeholder="Quantidade (ex: 5 ou -3)"
-              value={qtyAmount}
-              onChange={(e) => setQtyAmount(e.target.value)}
-              className="form-field"
-            />
-            <input
-              type="text"
-              placeholder="Motivo (ex: venda, reposicao)"
-              value={qtyReason}
-              onChange={(e) => setQtyReason(e.target.value)}
-              className="form-field"
-            />
-            <button onClick={handleAdjustQuantity} className="app-button-primary w-full">
-              Ajustar
-            </button>
-          </div>
-        </div>
+        {/* Fotos */}
+        <div className="app-card flex flex-col">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">
+            Fotos
+            {photos.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({photos.length})</span>}
+          </h2>
 
-        <div className="app-card">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Fotos</h2>
-
-          {product.photos && product.photos.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              {product.photos.map((photo) => (
-                <div key={photo.id} className="relative group">
-                  <img
-                    src={`https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w400`}
-                    alt={`Foto ${photo.position}`}
-                    className="w-full h-32 object-cover rounded-lg border"
-                  />
-                  <button
-                    onClick={() => handleDeletePhoto(photo.id)}
-                    className="absolute top-1 right-1 rounded bg-rose-600 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    X
-                  </button>
-                </div>
-              ))}
+          {photos.length === 0 ? (
+            <div className="flex flex-1 min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400">
+              <svg className="mb-3 h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
+              </svg>
+              <p className="text-sm font-medium">Nenhuma foto adicionada</p>
             </div>
           ) : (
-            <p className="mb-4 text-sm text-slate-500">Nenhuma foto adicionada</p>
-          )}
+            <>
+              <div className="relative flex-1 min-h-[240px] rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden">
+                <img
+                  src={`https://drive.google.com/thumbnail?id=${photos[activeSlide]?.drive_file_id}&sz=w800`}
+                  alt={`Foto ${activeSlide + 1}`}
+                  className="h-full w-full object-cover"
+                />
 
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="ID do arquivo no Google Drive"
-              value={photoUrl}
-              onChange={(e) => setPhotoUrl(e.target.value)}
-              className="form-field"
-            />
-            <div className="flex gap-2">
-              <select
-                value={photoPosition}
-                onChange={(e) => setPhotoPosition(e.target.value)}
-                className="form-field max-w-[120px]"
-              >
-                <option value="1">Posicao 1</option>
-                <option value="2">Posicao 2</option>
-                <option value="3">Posicao 3</option>
-                <option value="4">Posicao 4</option>
-              </select>
-              <button onClick={handleAddPhoto} className="app-button-secondary flex-1">
-                Adicionar Foto
-              </button>
-            </div>
-          </div>
+                {photos.length > 1 && (
+                  <>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-night/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                      {activeSlide + 1} / {photos.length}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSlide((s) => (s === 0 ? photos.length - 1 : s - 1))}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveSlide((s) => (s === photos.length - 1 ? 0 : s + 1))}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {photos.length > 1 && (
+                <div className="mt-3 flex gap-2">
+                  {photos.map((photo, i) => (
+                    <button
+                      key={photo.id}
+                      type="button"
+                      onClick={() => setActiveSlide(i)}
+                    className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
+                      i === activeSlide
+                        ? 'border-brand-ember shadow-glow'
+                        : 'border-slate-200 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={`https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w100`}
+                      alt={`Miniatura ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </button>
+                ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
-        <div className="app-card">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Historico Recente</h2>
+        {/* Histórico Recente */}
+        <div className="app-card lg:col-span-2">
+          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Histórico Recente</h2>
           {history.length === 0 ? (
-            <p className="text-sm text-slate-500">Sem historico</p>
+            <p className="text-sm text-slate-500">Sem histórico</p>
           ) : (
             <div className="space-y-3">
               {history.map((entry) => (

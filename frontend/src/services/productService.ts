@@ -34,6 +34,11 @@ export const productService = {
     await api.delete(`/products/${id}`)
   },
 
+  async toggleActive(id: string): Promise<Product> {
+    const response = await api.patch<Product>(`/products/${id}/toggle-active`)
+    return response.data
+  },
+
   async adjustQuantity(id: string, amount: number, reason: string): Promise<Product> {
     const response = await api.post<Product>(`/products/${id}/quantity`, { amount, reason })
     return response.data

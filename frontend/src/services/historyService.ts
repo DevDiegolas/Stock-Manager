@@ -16,4 +16,8 @@ export const historyService = {
     const response = await api.get<ListHistoryResponse>(`/history/product/${productId}`, { params })
     return response.data
   },
+
+  async clear(): Promise<void> {
+    await api.delete('/history')
+  },
 }

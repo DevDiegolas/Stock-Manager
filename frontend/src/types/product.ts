@@ -32,6 +32,7 @@ export interface CreateProductRequest {
   price: number
   description?: string
   quantity: number
+  photos?: { drive_file_id: string; position: number }[]
 }
 
 export interface UpdateProductRequest {

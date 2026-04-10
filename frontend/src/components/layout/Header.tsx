@@ -6,7 +6,7 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle }: HeaderProps) {
   const { user } = useAuth()
-  const firstName = user?.name?.split(' ')[0] || 'usuario'
+  const firstName = user?.name?.split(' ')[0] || 'usuário'
 
   return (
     <header className="sticky top-0 z-10 border-b border-white/60 bg-white/70 px-4 py-4 backdrop-blur-xl sm:px-6 lg:px-8">

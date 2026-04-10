@@ -20,10 +20,9 @@ function titleize(field: string): string {
     name: 'Nome',
     category: 'Categoria',
     color: 'Cor',
-    price: 'Preco',
+    price: 'Preço',
     measurement: 'Medida',
     size: 'Tamanho',
-    description: 'Descricao',
     quantity: 'Quantidade',
   }
 
@@ -35,6 +34,8 @@ export function formatHistoryAction(action: string): string {
     PRODUCT_CREATED: 'Produto criado',
     PRODUCT_UPDATED: 'Produto atualizado',
     PRODUCT_DELETED: 'Produto removido',
+    PRODUCT_ACTIVATED: 'Produto ativado',
+    PRODUCT_DEACTIVATED: 'Produto inativado',
     QUANTITY_ADDED: 'Quantidade adicionada',
     QUANTITY_REMOVED: 'Quantidade removida',
   }
@@ -74,10 +75,15 @@ export function formatHistoryDetails(action: string, details?: Record<string, un
     const lines = [
       amount !== null ? `Ajuste: ${amount > 0 ? `+${amount}` : amount}` : null,
       previous !== null && next !== null ? `Estoque: ${previous} -> ${next}` : null,
-      reason ? `Motivo: ${reason}` : 'Motivo: nao informado',
+      reason ? `Motivo: ${reason}` : 'Motivo: não informado',
     ].filter(Boolean) as string[]
 
     return lines
+  }
+
+  if (action === 'PRODUCT_ACTIVATED' || action === 'PRODUCT_DEACTIVATED') {
+    const name = asString(data.name)
+    return name ? [`Produto: ${name}`] : []
   }
 
   if (action === 'PRODUCT_UPDATED') {
