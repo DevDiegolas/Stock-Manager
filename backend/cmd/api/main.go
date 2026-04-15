@@ -18,6 +18,7 @@ import (
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/config"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/database"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/middleware"
+	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/storage"
 )
 
 func main() {
@@ -52,9 +53,14 @@ func main() {
 	historyService := history.NewService(historyRepo)
 	historyHandler := history.NewHandler(historyService)
 
+	photoStorage, err := storage.NewLocalStorage(cfg.UploadDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize local photo storage: %v", err)
+	}
+
 	productRepo := product.NewRepository(db)
-	productService := product.NewService(productRepo, historyRepo)
-	productHandler := product.NewHandler(productService)
+	productService := product.NewService(productRepo, historyRepo, photoStorage)
+	productHandler := product.NewHandler(productService, photoStorage)
 
 	catalogRepo := catalog.NewRepository(db)
 	catalogService := catalog.NewService(catalogRepo, productRepo)
@@ -71,6 +77,9 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok"}`))
 	})
+
+	// Static uploads
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
 
 	// API routes
 	r.Route("/api/v1", func(r chi.Router) {

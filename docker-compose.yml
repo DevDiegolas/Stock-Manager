@@ -23,6 +23,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgres://stockmanager:changeme@db:5432/stockmanager?sslmode=disable}
       JWT_SECRET: ${JWT_SECRET:-change-this-to-a-random-secret-key}
       SERVER_PORT: ${SERVER_PORT:-8080}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+    volumes:
+      - backend_uploads:/data/uploads
     ports:
       - "8081:8080"
     depends_on:
@@ -60,3 +63,4 @@ services:
 volumes:
   pgdata:
   dbgate_data:
+  backend_uploads:

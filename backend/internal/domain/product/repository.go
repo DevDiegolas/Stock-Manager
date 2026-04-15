@@ -166,6 +166,16 @@ func (r *Repository) DeletePhoto(photoID, productID string) error {
 	return err
 }
 
+func (r *Repository) GetPhotoByID(photoID, productID string) (*ProductPhoto, error) {
+	var photo ProductPhoto
+	query := `SELECT * FROM product_photos WHERE id = $1 AND product_id = $2`
+	if err := r.db.Get(&photo, query, photoID, productID); err != nil {
+		return nil, err
+	}
+
+	return &photo, nil
+}
+
 func (r *Repository) CountPhotos(productID string) (int, error) {
 	var count int
 	query := `SELECT COUNT(*) FROM product_photos WHERE product_id = $1`

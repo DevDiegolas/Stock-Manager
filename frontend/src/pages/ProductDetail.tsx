@@ -7,6 +7,7 @@ import type { HistoryEntry } from '../types/history'
 import { Skeleton } from '../components/ui/Skeleton'
 import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
+import { resolvePhotoUrl } from '../utils/photoUrl'
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
@@ -156,7 +157,7 @@ export default function ProductDetail() {
             <>
               <div className="relative flex-1 min-h-[240px] rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden">
                 <img
-                  src={`https://drive.google.com/thumbnail?id=${photos[activeSlide]?.drive_file_id}&sz=w800`}
+                  src={resolvePhotoUrl(photos[activeSlide]?.drive_file_id || '', 800)}
                   alt={`Foto ${activeSlide + 1}`}
                   className="h-full w-full object-cover"
                 />
@@ -202,7 +203,7 @@ export default function ProductDetail() {
                     }`}
                   >
                     <img
-                      src={`https://drive.google.com/thumbnail?id=${photo.drive_file_id}&sz=w100`}
+                      src={resolvePhotoUrl(photo.drive_file_id, 100)}
                       alt={`Miniatura ${i + 1}`}
                       className="h-full w-full object-cover"
                     />

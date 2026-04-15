@@ -44,10 +44,23 @@ export const productService = {
     return response.data
   },
 
-  async addPhoto(productId: string, driveFileId: string, position: number): Promise<ProductPhoto> {
+  async addPhoto(productId: string, photoRef: string, position: number): Promise<ProductPhoto> {
     const response = await api.post<ProductPhoto>(`/products/${productId}/photos`, {
-      drive_file_id: driveFileId,
+      drive_file_id: photoRef,
       position,
+    })
+    return response.data
+  },
+
+  async uploadPhoto(productId: string, file: File, position: number): Promise<ProductPhoto> {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('position', String(position))
+
+    const response = await api.post<ProductPhoto>(`/products/${productId}/photos`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     })
     return response.data
   },
