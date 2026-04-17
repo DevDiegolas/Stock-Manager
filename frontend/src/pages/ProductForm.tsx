@@ -28,6 +28,7 @@ export default function ProductForm() {
     price: '',
     quantity: '0',
   })
+  const [originalQuantity, setOriginalQuantity] = useState(0)
   const [photos, setPhotos] = useState<PhotoSlot[]>([])
   const [activeSlide, setActiveSlide] = useState(0)
   const [error, setError] = useState('')
@@ -45,6 +46,7 @@ export default function ProductForm() {
           price: p.price.toString(),
           quantity: p.quantity.toString(),
         })
+        setOriginalQuantity(p.quantity)
         if (p.photos && p.photos.length > 0) {
           setPhotos(
             p.photos.map((ph: ProductPhoto) => ({
@@ -76,6 +78,11 @@ export default function ProductForm() {
           color: form.color,
           price: parseFloat(form.price),
         })
+        const newQuantity = parseInt(form.quantity) || 0
+        const diff = newQuantity - originalQuantity
+        if (diff !== 0) {
+          await productService.adjustQuantity(id, diff, 'Ajuste manual via edição')
+        }
       } else {
         const created = await productService.create({
           name: form.name,
@@ -247,20 +254,20 @@ export default function ProductForm() {
                 required
               />
             </div>
-            {!isEditing && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
-                <input
-                  name="quantity"
-                  type="number"
-                  min="0"
-                  value={form.quantity}
-                  onChange={handleChange}
-                  className="form-field"
-                  required
-                />
-              </div>
-            )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
+              <input
+                name="quantity"
+                type="number"
+                min="0"
+                value={form.quantity}
+                onChange={handleChange}
+                className={`form-field font-semibold ${
+                  (parseInt(form.quantity) || 0) > 0 ? 'text-emerald-600' : 'text-rose-600'
+                }`}
+                required
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
