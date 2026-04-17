@@ -1,8 +1,9 @@
 import type { Product } from '../../types/product'
+import type { PublicProduct } from '../../types/catalog'
 import { PhotoCarousel } from '../ui/PhotoCarousel'
 
 interface CatalogProductCardProps {
-  product: Product
+  product: Product | PublicProduct
   whatsapp?: string
   instagram?: string
 }

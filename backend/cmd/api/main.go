@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -70,6 +71,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(middleware.CORS()))
+	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.Logger)
 
 	// Health check
@@ -85,8 +87,9 @@ func main() {
 	r.Route("/api/v1", func(r chi.Router) {
 		// Auth (public)
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", userHandler.Register)
-			r.Post("/login", userHandler.Login)
+			authLimiter := middleware.RateLimit(10, time.Minute)
+			r.With(authLimiter).Post("/register", userHandler.Register)
+			r.With(authLimiter).Post("/login", userHandler.Login)
 
 			// Protected
 			r.Group(func(r chi.Router) {

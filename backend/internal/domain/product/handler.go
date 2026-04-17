@@ -1,6 +1,7 @@
 package product
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -10,6 +11,13 @@ import (
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/middleware"
 	"github.com/go-chi/chi/v5"
 )
+
+var allowedPhotoMIMETypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
+}
 
 type Handler struct {
 	service *Service
@@ -181,13 +189,25 @@ func (h *Handler) AddPhoto(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		contentType := fileHeader.Header.Get("Content-Type")
-		if contentType != "" && !strings.HasPrefix(contentType, "image/") {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "only image files are allowed"})
+		sniffBuf := make([]byte, 512)
+		n, err := io.ReadFull(file, sniffBuf)
+		if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "failed to read file"})
+			return
+		}
+		sniffBuf = sniffBuf[:n]
+
+		detected := strings.ToLower(http.DetectContentType(sniffBuf))
+		if i := strings.Index(detected, ";"); i >= 0 {
+			detected = strings.TrimSpace(detected[:i])
+		}
+		if !allowedPhotoMIMETypes[detected] {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "only JPEG, PNG, WEBP or GIF images are allowed"})
 			return
 		}
 
-		publicPath, err := h.storage.SaveProductPhoto(file, fileHeader.Filename)
+		fullReader := io.MultiReader(bytes.NewReader(sniffBuf), file)
+		publicPath, err := h.storage.SaveProductPhoto(fullReader, fileHeader.Filename)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save photo"})
 			return

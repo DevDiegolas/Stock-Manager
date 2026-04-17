@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import type { ProductPhoto } from '../../types/product'
 import { resolvePhotoUrl } from '../../utils/photoUrl'
 
+interface CarouselPhoto {
+  drive_file_id: string
+}
+
 interface PhotoCarouselProps {
-  photos: ProductPhoto[]
+  photos: CarouselPhoto[]
   alt: string
 }
 
