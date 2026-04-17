@@ -21,8 +21,12 @@ services:
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgres://stockmanager:changeme@db:5432/stockmanager?sslmode=disable}
-      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-random-secret-key}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required — set in .env (openssl rand -hex 32)}
       SERVER_PORT: ${SERVER_PORT:-8080}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/data/uploads}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+    volumes:
+      - backend_uploads:/data/uploads
     ports:
       - "8081:8080"
     depends_on:
@@ -60,3 +64,4 @@ services:
 volumes:
   pgdata:
   dbgate_data:
+  backend_uploads:

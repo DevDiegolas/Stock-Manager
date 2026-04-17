@@ -67,10 +67,15 @@ func (s *Service) GetPublicCatalog(slug string) (*PublicCatalogResponse, error) 
 		}
 	}
 
+	publicProducts := make([]PublicProduct, len(listResp.Products))
+	for i, p := range listResp.Products {
+		publicProducts[i] = toPublicProduct(p)
+	}
+
 	return &PublicCatalogResponse{
 		StoreName: settings.StoreName,
 		Whatsapp:  settings.Whatsapp,
 		Instagram: settings.Instagram,
-		Products:  listResp.Products,
+		Products:  publicProducts,
 	}, nil
 }

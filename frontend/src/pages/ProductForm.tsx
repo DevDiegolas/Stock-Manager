@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { productService } from '../services/productService'
 import type { ProductPhoto } from '../types/product'
+import { resolvePhotoUrl } from '../utils/photoUrl'
 
 const categories = ['Biquíni', 'Calcinha', 'Sunga', 'Maiô', 'Saída de Praia', 'Outro']
 
 interface PhotoSlot {
-  driveFileId: string
+  photoRef: string
+  previewUrl: string
+  file?: File
   position: number
   id?: string // exists only for saved photos (edit mode)
 }
@@ -25,8 +28,8 @@ export default function ProductForm() {
     price: '',
     quantity: '0',
   })
+  const [originalQuantity, setOriginalQuantity] = useState(0)
   const [photos, setPhotos] = useState<PhotoSlot[]>([])
-  const [newPhotoUrl, setNewPhotoUrl] = useState('')
   const [activeSlide, setActiveSlide] = useState(0)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -43,10 +46,12 @@ export default function ProductForm() {
           price: p.price.toString(),
           quantity: p.quantity.toString(),
         })
+        setOriginalQuantity(p.quantity)
         if (p.photos && p.photos.length > 0) {
           setPhotos(
             p.photos.map((ph: ProductPhoto) => ({
-              driveFileId: ph.drive_file_id,
+              photoRef: ph.drive_file_id,
+              previewUrl: resolvePhotoUrl(ph.drive_file_id, 800),
               position: ph.position,
               id: ph.id,
             }))
@@ -62,6 +67,8 @@ export default function ProductForm() {
     setLoading(true)
 
     try {
+      let productId = id
+
       if (isEditing) {
         await productService.update(id, {
           name: form.name,
@@ -71,14 +78,13 @@ export default function ProductForm() {
           color: form.color,
           price: parseFloat(form.price),
         })
-        // Sync photos for edit mode - add new ones that don't have an id
-        for (const photo of photos) {
-          if (!photo.id) {
-            await productService.addPhoto(id, photo.driveFileId, photo.position)
-          }
+        const newQuantity = parseInt(form.quantity) || 0
+        const diff = newQuantity - originalQuantity
+        if (diff !== 0) {
+          await productService.adjustQuantity(id, diff, 'Ajuste manual via edição')
         }
       } else {
-        await productService.create({
+        const created = await productService.create({
           name: form.name,
           category: form.category,
           measurement: form.measurement || undefined,
@@ -86,15 +92,34 @@ export default function ProductForm() {
           color: form.color,
           price: parseFloat(form.price),
           quantity: parseInt(form.quantity) || 0,
-          photos: photos.map((p) => ({
-            drive_file_id: p.driveFileId,
-            position: p.position,
-          })),
+          photos: [],
         })
+        productId = created.id
       }
+
+      if (productId) {
+        for (const photo of photos) {
+          if (!photo.id) {
+            if (photo.file) {
+              await productService.uploadPhoto(productId, photo.file, photo.position)
+            } else {
+              await productService.addPhoto(productId, photo.photoRef, photo.position)
+            }
+          }
+        }
+      }
+
       navigate('/products')
-    } catch {
-      setError('Erro ao salvar produto')
+    } catch (error: unknown) {
+      const errMessage =
+        typeof error === 'object' &&
+        error !== null &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+          : null
+
+      setError(errMessage || 'Erro ao salvar produto')
     } finally {
       setLoading(false)
     }
@@ -104,18 +129,20 @@ export default function ProductForm() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  const addPhoto = () => {
-    if (!newPhotoUrl.trim()) return
+  const addPhoto = (file: File) => {
     if (photos.length >= 4) return
 
     const nextPosition = photos.length + 1
-    setPhotos((prev) => [...prev, { driveFileId: newPhotoUrl.trim(), position: nextPosition }])
-    setNewPhotoUrl('')
+    const previewUrl = URL.createObjectURL(file)
+    setPhotos((prev) => [...prev, { photoRef: '', previewUrl, file, position: nextPosition }])
     setActiveSlide(photos.length) // go to the newly added photo
   }
 
   const removePhoto = async (index: number) => {
     const photo = photos[index]
+    if (photo.previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(photo.previewUrl)
+    }
     // If editing and photo has an id, delete from server
     if (isEditing && id && photo.id) {
       await productService.deletePhoto(id, photo.id)
@@ -129,11 +156,12 @@ export default function ProductForm() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addPhoto()
-    }
+  const handleAddPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    addPhoto(file)
+    e.target.value = ''
   }
 
   return (
@@ -226,20 +254,20 @@ export default function ProductForm() {
                 required
               />
             </div>
-            {!isEditing && (
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
-                <input
-                  name="quantity"
-                  type="number"
-                  min="0"
-                  value={form.quantity}
-                  onChange={handleChange}
-                  className="form-field"
-                  required
-                />
-              </div>
-            )}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
+              <input
+                name="quantity"
+                type="number"
+                min="0"
+                value={form.quantity}
+                onChange={handleChange}
+                className={`form-field font-semibold ${
+                  (parseInt(form.quantity) || 0) > 0 ? 'text-emerald-600' : 'text-rose-600'
+                }`}
+                required
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -275,13 +303,13 @@ export default function ProductForm() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
                 </svg>
                 <p className="text-sm font-medium">Nenhuma foto adicionada</p>
-                <p className="mt-1 text-xs">Cole o ID do Google Drive abaixo</p>
+                <p className="mt-1 text-xs">Envie uma imagem para o produto</p>
               </div>
             ) : (
               <>
                 {/* Main image */}
                 <img
-                  src={`https://drive.google.com/thumbnail?id=${photos[activeSlide]?.driveFileId}&sz=w800`}
+                  src={photos[activeSlide]?.previewUrl}
                   alt={`Foto ${activeSlide + 1}`}
                   className="h-full w-full object-cover"
                 />
@@ -342,7 +370,7 @@ export default function ProductForm() {
                   }`}
                 >
                   <img
-                    src={`https://drive.google.com/thumbnail?id=${photo.driveFileId}&sz=w100`}
+                    src={resolvePhotoUrl(photo.photoRef || photo.previewUrl, 100)}
                     alt={`Miniatura ${i + 1}`}
                     className="h-full w-full object-cover"
                   />
@@ -355,20 +383,11 @@ export default function ProductForm() {
           {photos.length < 4 && (
             <div className="mt-3 flex gap-2">
               <input
-                type="text"
-                placeholder="ID do arquivo no Google Drive"
-                value={newPhotoUrl}
-                onChange={(e) => setNewPhotoUrl(e.target.value)}
-                onKeyDown={handleKeyDown}
+                type="file"
+                accept="image/*"
+                onChange={handleAddPhotoFile}
                 className="form-field flex-1"
               />
-              <button
-                type="button"
-                onClick={addPhoto}
-                className="app-button-secondary whitespace-nowrap"
-              >
-                Adicionar
-              </button>
             </div>
           )}
         </div>

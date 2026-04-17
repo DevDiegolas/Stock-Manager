@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -18,6 +19,7 @@ import (
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/config"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/database"
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/middleware"
+	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/storage"
 )
 
 func main() {
@@ -52,9 +54,14 @@ func main() {
 	historyService := history.NewService(historyRepo)
 	historyHandler := history.NewHandler(historyService)
 
+	photoStorage, err := storage.NewLocalStorage(cfg.UploadDir)
+	if err != nil {
+		log.Fatalf("Failed to initialize local photo storage: %v", err)
+	}
+
 	productRepo := product.NewRepository(db)
-	productService := product.NewService(productRepo, historyRepo)
-	productHandler := product.NewHandler(productService)
+	productService := product.NewService(productRepo, historyRepo, photoStorage)
+	productHandler := product.NewHandler(productService, photoStorage)
 
 	catalogRepo := catalog.NewRepository(db)
 	catalogService := catalog.NewService(catalogRepo, productRepo)
@@ -64,6 +71,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(middleware.CORS()))
+	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.Logger)
 
 	// Health check
@@ -72,12 +80,16 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
+	// Static uploads
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(cfg.UploadDir))))
+
 	// API routes
 	r.Route("/api/v1", func(r chi.Router) {
 		// Auth (public)
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/register", userHandler.Register)
-			r.Post("/login", userHandler.Login)
+			authLimiter := middleware.RateLimit(10, time.Minute)
+			r.With(authLimiter).Post("/register", userHandler.Register)
+			r.With(authLimiter).Post("/login", userHandler.Login)
 
 			// Protected
 			r.Group(func(r chi.Router) {

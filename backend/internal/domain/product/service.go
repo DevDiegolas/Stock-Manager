@@ -10,10 +10,15 @@ import (
 type Service struct {
 	repo        *Repository
 	historyRepo *history.Repository
+	storage     photoStorageCleaner
 }
 
-func NewService(repo *Repository, historyRepo *history.Repository) *Service {
-	return &Service{repo: repo, historyRepo: historyRepo}
+type photoStorageCleaner interface {
+	DeleteByPublicPath(publicPath string) error
+}
+
+func NewService(repo *Repository, historyRepo *history.Repository, storage photoStorageCleaner) *Service {
+	return &Service{repo: repo, historyRepo: historyRepo, storage: storage}
 }
 
 func (s *Service) Create(userID string, req CreateProductRequest) (*Product, error) {
@@ -75,7 +80,25 @@ func (s *Service) GetByID(id, userID string) (*Product, error) {
 }
 
 func (s *Service) List(userID string, params ListParams) (*ListResponse, error) {
-	return s.repo.List(userID, params)
+	resp, err := s.repo.List(userID, params)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(resp.Products) > 0 {
+		ids := make([]string, len(resp.Products))
+		for i, p := range resp.Products {
+			ids[i] = p.ID
+		}
+		photosMap, err := s.repo.GetPhotosByProductIDs(ids)
+		if err == nil {
+			for i := range resp.Products {
+				resp.Products[i].Photos = photosMap[resp.Products[i].ID]
+			}
+		}
+	}
+
+	return resp, nil
 }
 
 func (s *Service) Update(id, userID string, req UpdateProductRequest) (*Product, error) {
@@ -154,6 +177,12 @@ func (s *Service) Delete(id, userID string) error {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
 
+	if s.storage != nil {
+		for _, photo := range p.Photos {
+			_ = s.storage.DeleteByPublicPath(photo.DriveFileID)
+		}
+	}
+
 	s.recordHistory(userID, id, "PRODUCT_DELETED", map[string]interface{}{
 		"name": p.Name,
 	})
@@ -224,8 +253,8 @@ func (s *Service) AddPhoto(productID, userID string, req AddPhotoRequest) (*Prod
 		return nil, err
 	}
 
-	if req.Position < 1 || req.Position > 4 {
-		return nil, fmt.Errorf("position must be between 1 and 4")
+	if req.DriveFileID == "" {
+		return nil, fmt.Errorf("photo path is required")
 	}
 
 	count, err := s.repo.CountPhotos(productID)
@@ -236,10 +265,35 @@ func (s *Service) AddPhoto(productID, userID string, req AddPhotoRequest) (*Prod
 		return nil, fmt.Errorf("maximum of 4 photos per product")
 	}
 
+	existingPhotos, err := s.repo.GetPhotos(productID)
+	if err != nil {
+		return nil, err
+	}
+
+	occupied := map[int]bool{}
+	for _, p := range existingPhotos {
+		occupied[p.Position] = true
+	}
+
+	position := req.Position
+	if position < 1 || position > 4 || occupied[position] {
+		position = 0
+		for i := 1; i <= 4; i++ {
+			if !occupied[i] {
+				position = i
+				break
+			}
+		}
+	}
+
+	if position == 0 {
+		return nil, fmt.Errorf("no available photo position")
+	}
+
 	photo := &ProductPhoto{
 		ProductID:   productID,
 		DriveFileID: req.DriveFileID,
-		Position:    req.Position,
+		Position:    position,
 	}
 
 	if err := s.repo.AddPhoto(photo); err != nil {
@@ -253,7 +307,21 @@ func (s *Service) DeletePhoto(photoID, productID, userID string) error {
 	if _, err := s.repo.GetByID(productID, userID); err != nil {
 		return err
 	}
-	return s.repo.DeletePhoto(photoID, productID)
+
+	photo, err := s.repo.GetPhotoByID(photoID, productID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.DeletePhoto(photoID, productID); err != nil {
+		return err
+	}
+
+	if s.storage != nil {
+		_ = s.storage.DeleteByPublicPath(photo.DriveFileID)
+	}
+
+	return nil
 }
 
 func (s *Service) recordHistory(userID, productID, action string, details map[string]interface{}) {

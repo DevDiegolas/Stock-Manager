@@ -1,5 +1,3 @@
-import type { Product } from './product'
-
 export interface CatalogSettings {
   id: string
   user_id: string
@@ -12,9 +10,27 @@ export interface CatalogSettings {
   updated_at: string
 }
 
+export interface PublicProductPhoto {
+  id: string
+  drive_file_id: string
+  position: number
+}
+
+export interface PublicProduct {
+  id: string
+  name: string
+  category: string
+  measurement?: string
+  size?: string
+  color: string
+  price: number
+  quantity: number
+  photos?: PublicProductPhoto[]
+}
+
 export interface PublicCatalog {
   store_name: string
   whatsapp: string
   instagram: string
-  products: Product[]
+  products: PublicProduct[]
 }

@@ -11,7 +11,7 @@ Sistema web para controle de estoque com autenticação, catálogo de produtos, 
 - Controle de quantidade com motivo da movimentação 📈
 - Histórico de ações por produto para auditoria 🕘
 - Busca, paginação e dashboard com visão geral 🔎
-- Suporte a fotos de produtos com referência por ID 🖼️
+- Suporte a fotos de produtos com upload de imagem e armazenamento local persistente 🖼️
 
 ## 🧱 Stack
 
@@ -38,6 +38,7 @@ Sistema web para controle de estoque com autenticação, catálogo de produtos, 
 - Docker Compose
 - Nginx no frontend
 - Variáveis de ambiente para configuração
+- Volume Docker para persistência de uploads de imagens
 
 ## 🚀 Como rodar
 

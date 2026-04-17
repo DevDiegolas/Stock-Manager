@@ -1,20 +1,35 @@
 package product
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/DevDiegolas/Stock-Manager/backend/internal/platform/middleware"
 	"github.com/go-chi/chi/v5"
 )
 
-type Handler struct {
-	service *Service
+var allowedPhotoMIMETypes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
+	"image/webp": true,
+	"image/gif":  true,
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+type Handler struct {
+	service *Service
+	storage photoUploader
+}
+
+type photoUploader interface {
+	SaveProductPhoto(reader io.Reader, originalName string) (string, error)
+}
+
+func NewHandler(service *Service, storage photoUploader) *Handler {
+	return &Handler{service: service, storage: storage}
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
@@ -143,9 +158,70 @@ func (h *Handler) AddPhoto(w http.ResponseWriter, r *http.Request) {
 	productID := chi.URLParam(r, "id")
 
 	var req AddPhotoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
-		return
+
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		const maxPhotoSizeBytes = 20 << 20
+
+		if h.storage == nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "photo storage is not configured"})
+			return
+		}
+
+		if err := r.ParseMultipartForm(maxPhotoSizeBytes); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid multipart body"})
+			return
+		}
+
+		position, _ := strconv.Atoi(r.FormValue("position"))
+		if position == 0 {
+			position = 1
+		}
+
+		file, fileHeader, err := r.FormFile("file")
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "file is required"})
+			return
+		}
+		defer file.Close()
+
+		if fileHeader.Size > maxPhotoSizeBytes {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "image must be up to 20MB"})
+			return
+		}
+
+		sniffBuf := make([]byte, 512)
+		n, err := io.ReadFull(file, sniffBuf)
+		if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "failed to read file"})
+			return
+		}
+		sniffBuf = sniffBuf[:n]
+
+		detected := strings.ToLower(http.DetectContentType(sniffBuf))
+		if i := strings.Index(detected, ";"); i >= 0 {
+			detected = strings.TrimSpace(detected[:i])
+		}
+		if !allowedPhotoMIMETypes[detected] {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "only JPEG, PNG, WEBP or GIF images are allowed"})
+			return
+		}
+
+		fullReader := io.MultiReader(bytes.NewReader(sniffBuf), file)
+		publicPath, err := h.storage.SaveProductPhoto(fullReader, fileHeader.Filename)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save photo"})
+			return
+		}
+
+		req = AddPhotoRequest{
+			DriveFileID: publicPath,
+			Position:    position,
+		}
+	} else {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+			return
+		}
 	}
 
 	photo, err := h.service.AddPhoto(productID, userID, req)

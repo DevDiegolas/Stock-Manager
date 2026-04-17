@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import type { ProductPhoto } from '../../types/product'
+import { resolvePhotoUrl } from '../../utils/photoUrl'
+
+interface CarouselPhoto {
+  drive_file_id: string
+}
 
 interface PhotoCarouselProps {
-  photos: ProductPhoto[]
+  photos: CarouselPhoto[]
   alt: string
 }
 
@@ -22,7 +26,7 @@ export function PhotoCarousel({ photos, alt }: PhotoCarouselProps) {
   return (
     <div className="relative aspect-square overflow-hidden rounded-2xl bg-slate-100">
       <img
-        src={`https://drive.google.com/thumbnail?id=${photos[current]?.drive_file_id}&sz=w800`}
+        src={resolvePhotoUrl(photos[current]?.drive_file_id || '', 800)}
         alt={`${alt} - Foto ${current + 1}`}
         className="h-full w-full object-cover"
       />
