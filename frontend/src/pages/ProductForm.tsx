@@ -4,30 +4,31 @@ import { productService } from '../services/productService'
 import type { ProductPhoto } from '../types/product'
 import { resolvePhotoUrl } from '../utils/photoUrl'
 
-const categories = ['Biquíni', 'Calcinha', 'Sunga', 'Maiô', 'Saída de Praia', 'Outro']
+const CATEGORIES = ['Biquíni', 'Calcinha', 'Sunga', 'Maiô', 'Saída de Praia', 'Outro']
+
+const ChevLIcon = () => <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+const ChevRIcon = () => <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+const TrashIcon = () => <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+const UploadIcon = () => <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>
+const PlusIcon = () => <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
 
 interface PhotoSlot {
   photoRef: string
   previewUrl: string
   file?: File
   position: number
-  id?: string // exists only for saved photos (edit mode)
+  id?: string
 }
+
+const fieldLabel: React.CSSProperties = { display: 'block', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600, fontFamily: 'var(--font-body)' }
+const fieldInput: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-elev-strong)', fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text)', outline: 'none', transition: 'border 0.15s' }
 
 export default function ProductForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEditing = !!id
 
-  const [form, setForm] = useState({
-    name: '',
-    category: 'Biquini',
-    measurement: '',
-    size: '',
-    color: '',
-    price: '',
-    quantity: '0',
-  })
+  const [form, setForm] = useState({ name: '', category: 'Biquíni', measurement: '', size: '', color: '', price: '', quantity: '0' })
   const [originalQuantity, setOriginalQuantity] = useState(0)
   const [photos, setPhotos] = useState<PhotoSlot[]>([])
   const [activeSlide, setActiveSlide] = useState(0)
@@ -48,14 +49,12 @@ export default function ProductForm() {
         })
         setOriginalQuantity(p.quantity)
         if (p.photos && p.photos.length > 0) {
-          setPhotos(
-            p.photos.map((ph: ProductPhoto) => ({
-              photoRef: ph.drive_file_id,
-              previewUrl: resolvePhotoUrl(ph.drive_file_id, 800),
-              position: ph.position,
-              id: ph.id,
-            }))
-          )
+          setPhotos(p.photos.map((ph: ProductPhoto) => ({
+            photoRef: ph.drive_file_id,
+            previewUrl: resolvePhotoUrl(ph.drive_file_id, 800),
+            position: ph.position,
+            id: ph.id,
+          })))
         }
       })
     }
@@ -65,10 +64,8 @@ export default function ProductForm() {
     e.preventDefault()
     setError('')
     setLoading(true)
-
     try {
       let productId = id
-
       if (isEditing) {
         await productService.update(id, {
           name: form.name,
@@ -80,9 +77,7 @@ export default function ProductForm() {
         })
         const newQuantity = parseInt(form.quantity) || 0
         const diff = newQuantity - originalQuantity
-        if (diff !== 0) {
-          await productService.adjustQuantity(id, diff, 'Ajuste manual via edição')
-        }
+        if (diff !== 0) await productService.adjustQuantity(id, diff, 'Ajuste manual via edição')
       } else {
         const created = await productService.create({
           name: form.name,
@@ -100,25 +95,18 @@ export default function ProductForm() {
       if (productId) {
         for (const photo of photos) {
           if (!photo.id) {
-            if (photo.file) {
-              await productService.uploadPhoto(productId, photo.file, photo.position)
-            } else {
-              await productService.addPhoto(productId, photo.photoRef, photo.position)
-            }
+            if (photo.file) await productService.uploadPhoto(productId, photo.file, photo.position)
+            else await productService.addPhoto(productId, photo.photoRef, photo.position)
           }
         }
       }
-
       navigate('/products')
-    } catch (error: unknown) {
+    } catch (err: unknown) {
       const errMessage =
-        typeof error === 'object' &&
-        error !== null &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
-          ? (error as { response?: { data?: { error?: string } } }).response?.data?.error
+        typeof err === 'object' && err !== null && 'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
           : null
-
       setError(errMessage || 'Erro ao salvar produto')
     } finally {
       setLoading(false)
@@ -126,271 +114,190 @@ export default function ProductForm() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const addPhoto = (file: File) => {
     if (photos.length >= 4) return
-
     const nextPosition = photos.length + 1
     const previewUrl = URL.createObjectURL(file)
-    setPhotos((prev) => [...prev, { photoRef: '', previewUrl, file, position: nextPosition }])
-    setActiveSlide(photos.length) // go to the newly added photo
+    setPhotos(prev => [...prev, { photoRef: '', previewUrl, file, position: nextPosition }])
+    setActiveSlide(photos.length)
   }
 
   const removePhoto = async (index: number) => {
     const photo = photos[index]
-    if (photo.previewUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(photo.previewUrl)
-    }
-    // If editing and photo has an id, delete from server
-    if (isEditing && id && photo.id) {
-      await productService.deletePhoto(id, photo.id)
-    }
+    if (photo.previewUrl.startsWith('blob:')) URL.revokeObjectURL(photo.previewUrl)
+    if (isEditing && id && photo.id) await productService.deletePhoto(id, photo.id)
     const updated = photos.filter((_, i) => i !== index).map((p, i) => ({ ...p, position: i + 1 }))
     setPhotos(updated)
-    if (activeSlide >= updated.length && updated.length > 0) {
-      setActiveSlide(updated.length - 1)
-    } else if (updated.length === 0) {
-      setActiveSlide(0)
-    }
+    if (activeSlide >= updated.length && updated.length > 0) setActiveSlide(updated.length - 1)
+    else if (updated.length === 0) setActiveSlide(0)
   }
 
   const handleAddPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     addPhoto(file)
     e.target.value = ''
   }
 
-  return (
-    <div className="page-shell max-w-5xl">
-      <div className="mb-6">
-        <span className="pill-badge">Produto</span>
-        <h1 className="page-title mt-3">{isEditing ? 'Editar Produto' : 'Novo Produto'}</h1>
-        <p className="page-subtitle">Preencha os dados e adicione fotos para manter seu catálogo completo.</p>
-      </div>
+  const qtyNumber = parseInt(form.quantity) || 0
+  const qtyColor = qtyNumber === 0 ? 'var(--danger)' : qtyNumber <= 3 ? 'var(--warn)' : 'var(--success)'
 
+  return (
+    <div className="reveal" style={{ padding: '24px 28px 40px' }}>
       {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
+        <div style={{ marginBottom: 16, padding: '10px 14px', borderRadius: 12, background: 'var(--danger-bg)', color: 'var(--danger)', fontSize: 13, fontWeight: 500 }}>
+          {error}
+        </div>
       )}
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left - Form Fields */}
-        <div className="app-card space-y-4">
-          <h2 className="font-display text-xl font-bold text-brand-night">Informações</h2>
+      <form onSubmit={handleSubmit}>
+       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'stretch' }}>
+        {/* Left: info */}
+        <div>
+          <div className="panel-solid" style={{ padding: 22 }}>
+            <h2 className="display" style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>Informações da peça</h2>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Nome</label>
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="form-field"
-                required
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={fieldLabel}>Nome</label>
+                <input name="name" value={form.name} onChange={handleChange} style={fieldInput} placeholder="Biquíni Ibiza" required/>
+              </div>
+              <div>
+                <label style={fieldLabel}>Categoria</label>
+                <select name="category" value={form.category} onChange={handleChange} style={{ ...fieldInput, cursor: 'pointer' }}>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Categoria</label>
-              <select
-                name="category"
-                value={form.category}
-                onChange={handleChange}
-                className="form-field"
-              >
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={fieldLabel}>Cor</label>
+                <input name="color" value={form.color} onChange={handleChange} style={fieldInput} placeholder="Coral" required/>
+              </div>
+              <div>
+                <label style={fieldLabel}>Medida</label>
+                <input name="measurement" value={form.measurement} onChange={handleChange} placeholder="P, M, G" style={fieldInput}/>
+              </div>
+              <div>
+                <label style={fieldLabel}>Tamanho</label>
+                <input name="size" value={form.size} onChange={handleChange} placeholder="36, 38, 40" style={fieldInput}/>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={fieldLabel}>Preço (R$)</label>
+                <input name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} style={fieldInput} placeholder="189.00" required/>
+              </div>
+              <div>
+                <label style={fieldLabel}>Quantidade</label>
+                <input
+                  name="quantity" type="number" min="0" value={form.quantity} onChange={handleChange} required
+                  style={{ ...fieldInput, fontWeight: 600, color: qtyColor }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Cor</label>
-              <input
-                name="color"
-                value={form.color}
-                onChange={handleChange}
-                className="form-field"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Medida</label>
-              <input
-                name="measurement"
-                value={form.measurement}
-                onChange={handleChange}
-                placeholder="P, M, G, GG"
-                className="form-field"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tamanho</label>
-              <input
-                name="size"
-                value={form.size}
-                onChange={handleChange}
-                placeholder="36, 38, 40"
-                className="form-field"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Preço (R$)</label>
-              <input
-                name="price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={form.price}
-                onChange={handleChange}
-                className="form-field"
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Quantidade</label>
-              <input
-                name="quantity"
-                type="number"
-                min="0"
-                value={form.quantity}
-                onChange={handleChange}
-                className={`form-field font-semibold ${
-                  (parseInt(form.quantity) || 0) > 0 ? 'text-emerald-600' : 'text-rose-600'
-                }`}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="app-button-primary disabled:opacity-50"
-            >
-              {loading ? 'Salvando...' : isEditing ? 'Salvar' : 'Criar Produto'}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '12px' }}>
+              {loading ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Cadastrar peça'}
             </button>
-            <button
-              type="button"
-              onClick={() => navigate('/products')}
-              className="app-button-secondary"
-            >
+            <button type="button" onClick={() => navigate('/products')} className="btn-secondary" style={{ padding: '12px 20px' }}>
               Cancelar
             </button>
           </div>
         </div>
 
-        {/* Right - Photo Carousel */}
-        <div className="app-card flex flex-col">
-          <h2 className="mb-4 font-display text-xl font-bold text-brand-night">
-            Fotos
-            <span className="ml-2 text-sm font-normal text-slate-400">({photos.length}/4)</span>
-          </h2>
+        {/* Right: photos */}
+        <div className="panel-solid" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+            <h2 className="display" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>Fotos</h2>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{photos.length}/4</span>
+          </div>
 
-          {/* Carousel */}
-          <div className="relative flex-1 min-h-[280px] rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 overflow-hidden">
+          {/* Main carousel */}
+          <div style={{
+            position: 'relative',
+            aspectRatio: '4/3',
+            maxHeight: 360,
+            borderRadius: 16,
+            overflow: 'hidden',
+            background: 'var(--bg)',
+            border: photos.length === 0 ? '1.5px dashed var(--border)' : '1px solid var(--border)',
+          }}>
             {photos.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center text-slate-400">
-                <svg className="mb-3 h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-                </svg>
-                <p className="text-sm font-medium">Nenhuma foto adicionada</p>
-                <p className="mt-1 text-xs">Envie uma imagem para o produto</p>
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, color: 'var(--text-subtle)' }}>
+                <UploadIcon />
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, fontWeight: 500 }}>Nenhuma foto adicionada</div>
+                  <div style={{ fontSize: 11, marginTop: 2 }}>envie até 4 imagens da peça</div>
+                </div>
               </div>
             ) : (
               <>
-                {/* Main image */}
-                <img
-                  src={photos[activeSlide]?.previewUrl}
-                  alt={`Foto ${activeSlide + 1}`}
-                  className="h-full w-full object-cover"
-                />
+                <img src={photos[activeSlide]?.previewUrl} alt={`Foto ${activeSlide + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
 
-                {/* Remove button */}
-                <button
-                  type="button"
-                  onClick={() => removePhoto(activeSlide)}
-                  className="absolute right-2 top-2 rounded-lg bg-rose-600/90 px-2.5 py-1 text-xs font-medium text-white shadow-lg backdrop-blur-sm transition-all hover:bg-rose-700"
-                >
-                  Remover
+                <button type="button" onClick={() => removePhoto(activeSlide)}
+                  style={{ position: 'absolute', top: 10, right: 10, padding: '6px 10px', borderRadius: 8, background: 'rgba(225,29,72,0.9)', color: 'white', border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, backdropFilter: 'blur(4px)' }}>
+                  <TrashIcon /> Remover
                 </button>
 
-                {/* Slide counter */}
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-night/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                  {activeSlide + 1} / {photos.length}
-                </div>
-
-                {/* Nav arrows */}
                 {photos.length > 1 && (
                   <>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSlide((s) => (s === 0 ? photos.length - 1 : s - 1))}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                      </svg>
+                    <button type="button" onClick={() => setActiveSlide(s => s === 0 ? photos.length - 1 : s - 1)}
+                      style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.92)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: 'var(--shadow-panel)' }}>
+                      <ChevLIcon />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSlide((s) => (s === photos.length - 1 ? 0 : s + 1))}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                      </svg>
+                    <button type="button" onClick={() => setActiveSlide(s => s === photos.length - 1 ? 0 : s + 1)}
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.92)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: 'var(--shadow-panel)' }}>
+                      <ChevRIcon />
                     </button>
+                    <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5 }}>
+                      {photos.map((_, i) => (
+                        <button key={i} type="button" onClick={() => setActiveSlide(i)}
+                          style={{ width: i === activeSlide ? 18 : 6, height: 6, borderRadius: 3, background: i === activeSlide ? 'white' : 'rgba(255,255,255,0.55)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}/>
+                      ))}
+                    </div>
                   </>
                 )}
               </>
             )}
           </div>
 
-          {/* Thumbnail strip */}
-          {photos.length > 0 && (
-            <div className="mt-3 flex gap-2">
-              {photos.map((photo, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setActiveSlide(i)}
-                  className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                    i === activeSlide
-                      ? 'border-brand-ember shadow-glow'
-                      : 'border-slate-200 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img
-                    src={resolvePhotoUrl(photo.photoRef || photo.previewUrl, 100)}
-                    alt={`Miniatura ${i + 1}`}
-                    className="h-full w-full object-cover"
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Thumbnails + add button */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {photos.map((photo, i) => (
+              <button key={i} type="button" onClick={() => setActiveSlide(i)} style={{
+                width: 60, height: 60, flexShrink: 0, borderRadius: 10, overflow: 'hidden',
+                border: `2px solid ${i === activeSlide ? 'var(--ember)' : 'var(--border)'}`,
+                cursor: 'pointer', padding: 0, opacity: i === activeSlide ? 1 : 0.65, transition: 'all 0.15s',
+                boxShadow: i === activeSlide ? 'var(--shadow-glow)' : 'none',
+              }}>
+                <img src={photo.previewUrl} alt={`Miniatura ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+              </button>
+            ))}
 
-          {/* Add photo input */}
-          {photos.length < 4 && (
-            <div className="mt-3 flex gap-2">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAddPhotoFile}
-                className="form-field flex-1"
-              />
-            </div>
-          )}
+            {photos.length < 4 && (
+              <label style={{
+                width: 60, height: 60, flexShrink: 0, borderRadius: 10,
+                border: '1.5px dashed var(--border)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-subtle)', background: 'var(--bg)', transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--ember)'}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'}>
+                <input type="file" accept="image/*" onChange={handleAddPhotoFile} style={{ display: 'none' }}/>
+                <PlusIcon />
+              </label>
+            )}
+          </div>
         </div>
+       </div>
       </form>
     </div>
   )

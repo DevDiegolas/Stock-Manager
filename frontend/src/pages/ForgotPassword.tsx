@@ -29,12 +29,14 @@ export default function ForgotPassword() {
   const [sent, setSent] = useState(false)
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', background: 'var(--bg)', color: 'var(--text)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', background: 'var(--bg)', color: 'var(--text)', position: 'relative', overflow: 'hidden', justifyContent: 'center' }}>
       {/* Orbs */}
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
         <div style={{ position: 'absolute', top: '-15%', left: '-10%', width: 520, height: 520, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,107,61,0.3), transparent 70%)', filter: 'blur(40px)' }}/>
         <div style={{ position: 'absolute', bottom: '-20%', right: '-5%', width: 620, height: 620, borderRadius: '50%', background: 'radial-gradient(circle, rgba(30,203,225,0.25), transparent 70%)', filter: 'blur(40px)' }}/>
       </div>
+
+      <div style={{ display: 'flex', width: '100%', maxWidth: 1280, position: 'relative', zIndex: 1 }}>
 
       {/* Left editorial column */}
       <div className="hidden lg:flex" style={{ flex: '1 1 52%', position: 'relative', padding: '40px 56px', flexDirection: 'column', justifyContent: 'space-between', zIndex: 1 }}>
@@ -164,6 +166,8 @@ export default function ForgotPassword() {
             </>
           )}
         </div>
+      </div>
+
       </div>
     </div>
   )

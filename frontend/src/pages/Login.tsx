@@ -108,7 +108,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', background: 'var(--bg)', color: 'var(--text)', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', background: 'var(--bg)', color: 'var(--text)', position: 'relative', overflow: 'hidden', justifyContent: 'center' }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Orbs */}
@@ -117,6 +117,8 @@ export default function Login() {
         <div style={{ position: 'absolute', bottom: '-20%', right: '-5%', width: 620, height: 620, borderRadius: '50%', background: 'radial-gradient(circle, rgba(30,203,225,0.25), transparent 70%)', filter: 'blur(40px)' }}/>
         <div style={{ position: 'absolute', top: '40%', left: '30%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,243,208,0.2), transparent 70%)', filter: 'blur(40px)' }}/>
       </div>
+
+      <div style={{ display: 'flex', width: '100%', maxWidth: 1280, position: 'relative', zIndex: 1 }}>
 
       {/* Left editorial column */}
       <div className="hidden lg:flex" style={{ flex: '1 1 52%', position: 'relative', padding: '40px 56px', flexDirection: 'column', justifyContent: 'space-between', zIndex: 1 }}>
@@ -240,6 +242,8 @@ export default function Login() {
             <Link to="/register" style={{ color: 'var(--ember)', fontWeight: 600, textDecoration: 'none' }}>criar conta grátis</Link>
           </div>
         </div>
+      </div>
+
       </div>
     </div>
   )

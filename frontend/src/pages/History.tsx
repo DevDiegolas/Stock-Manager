@@ -38,7 +38,27 @@ const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
   { id: 'QUANTITY_REMOVED', label: 'Saída' },
 ]
 
-const PERIOD_FILTERS = ['Hoje', 'Esta semana', 'Este mês', 'Personalizado']
+type PeriodFilter = 'Tudo' | 'Hoje' | 'Esta semana' | 'Este mês'
+const PERIOD_FILTERS: PeriodFilter[] = ['Tudo', 'Hoje', 'Esta semana', 'Este mês']
+
+function entryMatchesPeriod(entry: HistoryEntry, period: PeriodFilter): boolean {
+  if (period === 'Tudo') return true
+  const date = new Date(entry.created_at)
+  const now = new Date()
+  if (period === 'Hoje') {
+    return date.toDateString() === now.toDateString()
+  }
+  if (period === 'Esta semana') {
+    const weekStart = new Date(now)
+    weekStart.setHours(0, 0, 0, 0)
+    weekStart.setDate(now.getDate() - now.getDay())
+    return date >= weekStart
+  }
+  if (period === 'Este mês') {
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+  }
+  return true
+}
 
 function groupByDay(entries: HistoryEntry[]): Record<string, HistoryEntry[]> {
   return entries.reduce((acc, entry) => {
@@ -67,7 +87,7 @@ export default function History() {
   const [loading, setLoading] = useState(true)
   const [showClearModal, setShowClearModal] = useState(false)
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('Todos')
-  const [periodFilter, setPeriodFilter] = useState('Esta semana')
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('Tudo')
 
   useEffect(() => {
     setLoading(true)
@@ -86,7 +106,9 @@ export default function History() {
     setPage(1)
   }
 
-  const filtered = typeFilter === 'Todos' ? entries : entries.filter(e => e.action === typeFilter)
+  const filtered = entries
+    .filter(e => typeFilter === 'Todos' || e.action === typeFilter)
+    .filter(e => entryMatchesPeriod(e, periodFilter))
   const grouped = groupByDay(filtered)
 
   const filterBtnStyle = (active: boolean) => ({
@@ -153,7 +175,7 @@ export default function History() {
           Object.entries(grouped).map(([day, dayEntries]) => (
             <div key={day}>
               {/* Day header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, position: 'sticky', top: 72, background: 'var(--bg)', padding: '6px 0', zIndex: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, padding: '0 4px' }}>
                 <div className="display" style={{ fontSize: 13, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.14em', whiteSpace: 'nowrap' }}>
                   {day}
                 </div>
