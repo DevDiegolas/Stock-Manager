@@ -203,7 +203,7 @@ export default function ProductForm() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             <button type="submit" disabled={loading} className="btn-primary" style={{ flex: 1, justifyContent: 'center', padding: '12px' }}>
               {loading ? 'Salvando...' : isEditing ? 'Salvar alterações' : 'Cadastrar peça'}
             </button>
