@@ -9,6 +9,7 @@ export default {
       fontFamily: {
         display: ['"Space Grotesk"', 'sans-serif'],
         body: ['"Sora"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       colors: {
         brand: {

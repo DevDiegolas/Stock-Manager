@@ -9,6 +9,43 @@ import { ConfirmModal } from '../components/ui/ConfirmModal'
 import { formatHistoryAction, formatHistoryDetails } from '../utils/historyFormat'
 import { resolvePhotoUrl } from '../utils/photoUrl'
 
+const EditIcon = () => (
+  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+    <path d="M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+)
+const TrashIcon = () => (
+  <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+  </svg>
+)
+const ChevLIcon = () => (
+  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+)
+const ChevRIcon = () => (
+  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+)
+const UploadIcon = () => (
+  <svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+    <path d="M17 8l-5-5-5 5M12 3v12"/>
+  </svg>
+)
+
+function actionColors(action: string) {
+  const map: Record<string, { bg: string; fg: string; label: string }> = {
+    PRODUCT_CREATED:     { bg: 'var(--success-bg)', fg: 'var(--success)', label: 'Criado' },
+    PRODUCT_UPDATED:     { bg: 'var(--aqua-soft)',  fg: 'var(--aqua)',    label: 'Atualizado' },
+    PRODUCT_DELETED:     { bg: 'var(--danger-bg)',  fg: 'var(--danger)',  label: 'Removido' },
+    PRODUCT_ACTIVATED:   { bg: 'var(--success-bg)', fg: 'var(--success)', label: 'Ativado' },
+    PRODUCT_DEACTIVATED: { bg: 'var(--warn-bg)',    fg: 'var(--warn)',    label: 'Inativado' },
+    QUANTITY_ADDED:      { bg: 'var(--success-bg)', fg: 'var(--success)', label: 'Entrada' },
+    QUANTITY_REMOVED:    { bg: 'var(--ember-soft)', fg: 'var(--ember)',   label: 'Saída' },
+  }
+  return map[action] || { bg: 'var(--border)', fg: 'var(--text-muted)', label: action }
+}
+
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -17,12 +54,13 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [activeSlide, setActiveSlide] = useState(0)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [uploadRef] = useState(() => ({ current: null as HTMLInputElement | null }))
 
   useEffect(() => {
     if (!id) return
     Promise.all([
       productService.getById(id),
-      historyService.listByProduct(id, { limit: 10 }),
+      historyService.listByProduct(id, { limit: 8 }),
     ]).then(([p, h]) => {
       setProduct(p)
       setHistory(h.entries)
@@ -39,56 +77,42 @@ export default function ProductDetail() {
     if (!id) return
     const updated = await productService.toggleActive(id)
     setProduct(updated)
-    const h = await historyService.listByProduct(id, { limit: 10 })
+    const h = await historyService.listByProduct(id, { limit: 8 })
     setHistory(h.entries)
+  }
+
+  const handleUploadPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files?.[0]) return
+    try {
+      await productService.uploadPhoto(id, e.target.files[0])
+      const updated = await productService.getById(id)
+      setProduct(updated)
+    } catch { /* ignore */ }
   }
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Skeleton className="h-56" />
-          <Skeleton className="h-56" />
+      <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Skeleton className="h-8 w-56" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 20 }}>
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
         </div>
       </div>
     )
   }
-  if (!product) return <div className="app-empty text-slate-600">Produto não encontrado</div>
+  if (!product) {
+    return (
+      <div style={{ padding: '24px 28px', textAlign: 'center', color: 'var(--text-muted)' }}>
+        Produto não encontrado
+      </div>
+    )
+  }
 
   const photos = product.photos || []
 
   return (
-    <div className="page-shell max-w-5xl">
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <span className="pill-badge">Detalhes</span>
-          <h1 className="page-title mt-3">{product.name}</h1>
-          <p className="page-subtitle">Informações, fotos e histórico deste produto.</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to={`/products/${id}/edit`} className="app-button-primary">
-            Editar
-          </Link>
-          <button
-            onClick={handleToggleActive}
-            className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
-              product.active
-                ? 'border-amber-300/70 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                : 'border-emerald-300/70 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-            }`}
-          >
-            {product.active ? 'Inativar' : 'Ativar'}
-          </button>
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            className="rounded-xl border border-rose-300/70 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100"
-          >
-            Remover
-          </button>
-        </div>
-      </div>
-
+    <div className="reveal" style={{ padding: '24px 28px 40px' }}>
       {showDeleteModal && (
         <ConfirmModal
           title="Remover produto"
@@ -101,140 +125,178 @@ export default function ProductDetail() {
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* Detalhes */}
-        <div className="app-card !p-4">
-          <h2 className="mb-3 font-display text-lg font-bold text-brand-night">Detalhes</h2>
-          <dl className="space-y-2">
-            <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Categoria</dt>
-              <dd className="text-sm font-semibold text-slate-700">{product.category}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Cor</dt>
-              <dd className="text-sm font-semibold text-slate-700">{product.color}</dd>
-            </div>
-            {product.measurement && (
-              <div className="flex justify-between">
-                <dt className="text-sm text-slate-500">Medida</dt>
-                <dd className="text-sm font-semibold text-slate-700">{product.measurement}</dd>
-              </div>
-            )}
-            {product.size && (
-              <div className="flex justify-between">
-                <dt className="text-sm text-slate-500">Tamanho</dt>
-                <dd className="text-sm font-semibold text-slate-700">{product.size}</dd>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Preço</dt>
-              <dd className="text-sm font-semibold text-slate-700">R$ {product.price.toFixed(2)}</dd>
-            </div>
-            <div className="flex justify-between">
-              <dt className="text-sm text-slate-500">Quantidade</dt>
-              <dd className={`text-sm font-semibold ${product.quantity > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                {product.quantity}
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        {/* Fotos */}
-        <div className="app-card flex flex-col">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">
-            Fotos
-            {photos.length > 0 && <span className="ml-2 text-sm font-normal text-slate-400">({photos.length})</span>}
-          </h2>
-
-          {photos.length === 0 ? (
-            <div className="flex flex-1 min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 text-slate-400">
-              <svg className="mb-3 h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" />
-              </svg>
-              <p className="text-sm font-medium">Nenhuma foto adicionada</p>
-            </div>
-          ) : (
-            <>
-              <div className="relative flex-1 min-h-[240px] rounded-2xl border border-slate-200 bg-slate-50/50 overflow-hidden">
+      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 24, alignItems: 'start' }}>
+        {/* Left: Photo carousel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Main image */}
+          <div className="panel-solid" style={{ padding: 0, overflow: 'hidden', borderRadius: 20 }}>
+            <div style={{ position: 'relative', aspectRatio: '4/5', background: 'var(--bg)' }}>
+              {photos.length > 0 ? (
                 <img
                   src={resolvePhotoUrl(photos[activeSlide]?.drive_file_id || '', 800)}
                   alt={`Foto ${activeSlide + 1}`}
-                  className="h-full w-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
-
-                {photos.length > 1 && (
-                  <>
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-brand-night/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-                      {activeSlide + 1} / {photos.length}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSlide((s) => (s === 0 ? photos.length - 1 : s - 1))}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveSlide((s) => (s === photos.length - 1 ? 0 : s + 1))}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-brand-night shadow-md backdrop-blur-sm transition-all hover:bg-white"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {photos.length > 1 && (
-                <div className="mt-3 flex gap-2">
-                  {photos.map((photo, i) => (
-                    <button
-                      key={photo.id}
-                      type="button"
-                      onClick={() => setActiveSlide(i)}
-                    className={`h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all ${
-                      i === activeSlide
-                        ? 'border-brand-ember shadow-glow'
-                        : 'border-slate-200 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <img
-                      src={resolvePhotoUrl(photo.drive_file_id, 100)}
-                      alt={`Miniatura ${i + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
+              ) : (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, color: 'var(--text-subtle)' }}>
+                  <svg width={48} height={48} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z"/>
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>Nenhuma foto</span>
                 </div>
               )}
-            </>
+
+              {photos.length > 1 && (
+                <>
+                  <button type="button" onClick={() => setActiveSlide(s => s === 0 ? photos.length - 1 : s - 1)}
+                    style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: 'var(--shadow-panel)' }}>
+                    <ChevLIcon />
+                  </button>
+                  <button type="button" onClick={() => setActiveSlide(s => s === photos.length - 1 ? 0 : s + 1)}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', boxShadow: 'var(--shadow-panel)' }}>
+                    <ChevRIcon />
+                  </button>
+                  <div style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5 }}>
+                    {photos.map((_, i) => (
+                      <button key={i} type="button" onClick={() => setActiveSlide(i)} style={{ width: i === activeSlide ? 18 : 6, height: 6, borderRadius: 3, background: i === activeSlide ? 'white' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', transition: 'all 0.2s', padding: 0 }}/>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Thumbnails */}
+          {photos.length > 1 && (
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+              {photos.map((photo, i) => (
+                <button key={photo.id} type="button" onClick={() => setActiveSlide(i)} style={{
+                  width: 64, height: 64, flexShrink: 0, borderRadius: 10, overflow: 'hidden',
+                  border: `2px solid ${i === activeSlide ? 'var(--ember)' : 'var(--border)'}`,
+                  cursor: 'pointer', padding: 0, opacity: i === activeSlide ? 1 : 0.65, transition: 'all 0.15s',
+                }}>
+                  <img src={resolvePhotoUrl(photo.drive_file_id, 120)} alt={`Miniatura ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                </button>
+              ))}
+
+              {/* Add photo slot */}
+              <label style={{
+                width: 64, height: 64, flexShrink: 0, borderRadius: 10,
+                border: '1.5px dashed var(--border)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--text-subtle)', background: 'var(--bg)',
+              }}>
+                <input ref={r => { uploadRef.current = r }} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleUploadPhoto}/>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>+</span>
+              </label>
+            </div>
           )}
+
+          {/* Upload zone */}
+          <label className="panel-solid" style={{
+            padding: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
+            gap: 10, cursor: 'pointer', border: '1.5px dashed var(--border)', borderRadius: 16,
+            color: 'var(--text-muted)', transition: 'border-color 0.15s',
+          }}
+          onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--ember)'}
+          onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'}>
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUploadPhoto}/>
+            <UploadIcon />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 500 }}>Adicionar fotos</div>
+              <div style={{ fontSize: 11, color: 'var(--text-subtle)', marginTop: 2 }}>clique ou arraste aqui</div>
+            </div>
+          </label>
         </div>
 
-        {/* Histórico Recente */}
-        <div className="app-card lg:col-span-2">
-          <h2 className="mb-4 font-display text-2xl font-bold text-brand-night">Histórico Recente</h2>
-          {history.length === 0 ? (
-            <p className="text-sm text-slate-500">Sem histórico</p>
-          ) : (
-            <div className="space-y-3">
-              {history.map((entry) => (
-                <div key={entry.id} className="rounded-xl border border-slate-200 bg-white/80 px-3 py-2">
-                  <p className="text-sm font-semibold text-slate-800">
-                    {formatHistoryAction(entry.action)}
-                  </p>
-                  {formatHistoryDetails(entry.action, entry.details).map((line) => (
-                    <p key={line} className="text-xs text-slate-600">{line}</p>
-                  ))}
-                  <p className="text-xs text-slate-500">
-                    {new Date(entry.created_at).toLocaleString('pt-BR')}
-                  </p>
+        {/* Right: Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Header */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span className={`chip ${product.active ? 'chip-success' : 'chip-danger'}`}>{product.active ? 'Ativo' : 'Inativo'}</span>
+              <span className="chip">{product.category}</span>
+            </div>
+            <h1 className="display" style={{ margin: 0, fontSize: 28, fontWeight: 700, letterSpacing: '-0.02em' }}>{product.name}</h1>
+            <div className="grad-text display" style={{ fontSize: 24, fontWeight: 700, marginTop: 6 }}>
+              R$ {product.price.toFixed(2).replace('.', ',')}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {[
+              { label: 'Estoque', value: product.quantity, color: product.quantity === 0 ? 'var(--danger)' : product.quantity <= 3 ? 'var(--warn)' : 'var(--success)' },
+              { label: 'Fotos', value: photos.length, color: 'var(--text)' },
+              { label: 'Histórico', value: history.length, color: 'var(--text)' },
+            ].map(stat => (
+              <div key={stat.label} style={{ padding: '12px 14px', borderRadius: 14, background: 'var(--bg-elev)', border: '1px solid var(--border)', textAlign: 'center' }}>
+                <div className="display" style={{ fontSize: 22, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Info */}
+          <div className="panel-solid" style={{ padding: 18 }}>
+            <h3 className="display" style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 600 }}>Informações</h3>
+            <dl style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                { label: 'Cor', value: product.color },
+                product.size ? { label: 'Tamanho', value: product.size } : null,
+                product.measurement ? { label: 'Medida', value: product.measurement } : null,
+                product.description ? { label: 'Descrição', value: product.description } : null,
+              ].filter(Boolean).map(row => (
+                <div key={row!.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <dt style={{ fontSize: 13, color: 'var(--text-muted)' }}>{row!.label}</dt>
+                  <dd style={{ fontSize: 13, fontWeight: 500, margin: 0, maxWidth: '60%', textAlign: 'right' }}>{row!.value}</dd>
                 </div>
               ))}
+            </dl>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Link to={`/products/${id}/edit`} className="btn-primary" style={{ flex: 1, justifyContent: 'center', gap: 6, textDecoration: 'none' }}>
+              <EditIcon /> Editar
+            </Link>
+            <button onClick={handleToggleActive} className="btn-secondary" style={{ padding: '10px 14px', fontSize: 13 }}>
+              {product.active ? 'Inativar' : 'Ativar'}
+            </button>
+            <button onClick={() => setShowDeleteModal(true)} style={{
+              padding: '10px 12px', borderRadius: 12, border: '1px solid var(--danger-bg)',
+              background: 'var(--danger-bg)', color: 'var(--danger)', cursor: 'pointer', display: 'flex', alignItems: 'center',
+            }}>
+              <TrashIcon />
+            </button>
+          </div>
+
+          {/* Mini history */}
+          {history.length > 0 && (
+            <div className="panel-solid" style={{ padding: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 className="display" style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>Histórico recente</h3>
+                <Link to="/history" style={{ fontSize: 11, color: 'var(--ember)', textDecoration: 'none', fontWeight: 600 }}>ver tudo</Link>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {history.map(entry => {
+                  const c = actionColors(entry.action)
+                  const details = formatHistoryDetails(entry.action, entry.details)
+                  return (
+                    <div key={entry.id} style={{ display: 'flex', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'var(--bg)', borderLeft: `3px solid ${c.fg}` }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ padding: '2px 6px', borderRadius: 4, background: c.bg, color: c.fg, fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{c.label}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-subtle)' }}>
+                            {new Date(entry.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        {details.length > 0 && <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>{details[0]}</p>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>
