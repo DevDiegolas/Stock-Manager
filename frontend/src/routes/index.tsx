@@ -6,6 +6,7 @@ import { MainLayout } from '../components/layout/MainLayout'
 import { RouteTransition } from '../components/ui/RouteTransition'
 import Login from '../pages/Login'
 import Register from '../pages/Register'
+import ForgotPassword from '../pages/ForgotPassword'
 import Dashboard from '../pages/Dashboard'
 import Products from '../pages/Products'
 import ProductForm from '../pages/ProductForm'
@@ -22,6 +23,7 @@ export function AppRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<RouteTransition><Login /></RouteTransition>} />
         <Route path="/register" element={<RouteTransition><Register /></RouteTransition>} />
+        <Route path="/forgot-password" element={<RouteTransition><ForgotPassword /></RouteTransition>} />
         <Route path="/c/:slug" element={<RouteTransition><PublicCatalog /></RouteTransition>} />
 
         <Route
