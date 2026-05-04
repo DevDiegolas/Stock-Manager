@@ -217,7 +217,7 @@ export default function Products() {
               {filtered.map((p, i) => (
                 <tr key={p.id}
                   style={{ borderTop: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.12s' }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--sand)'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'var(--row-hover)'}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
                   onClick={() => window.location.href = `/products/${p.id}`}
                 >

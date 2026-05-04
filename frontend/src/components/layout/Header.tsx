@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
@@ -22,6 +23,23 @@ function MenuIcon() {
   )
 }
 
+function SunIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2.5M12 19.5V22M4.93 4.93l1.77 1.77M17.3 17.3l1.77 1.77M2 12h2.5M19.5 12H22M4.93 19.07l1.77-1.77M17.3 6.7l1.77-1.77" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />
+    </svg>
+  )
+}
+
 function getHeaderInfo(pathname: string) {
   if (pathname === '/') return { title: 'Dashboard', subtitle: 'Visão geral do estoque' }
   if (pathname === '/products') return { title: 'Produtos', subtitle: 'Cadastro, estoque e preços' }
@@ -36,7 +54,17 @@ function getHeaderInfo(pathname: string) {
 export function Header({ onMenuToggle }: HeaderProps) {
   const { user } = useAuth()
   const location = useLocation()
+  const [isDark, setIsDark] = useState(() => {
+    const savedTheme = window.localStorage.getItem('theme')
+    if (savedTheme) return savedTheme === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
   const firstName = user?.name?.split(' ')[0] || 'usuário'
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light')
+    window.localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  }, [isDark])
 
   const h = new Date().getHours()
   const greet = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'
@@ -92,6 +120,17 @@ export function Header({ onMenuToggle }: HeaderProps) {
           Online
         </div>
         <button
+          type="button"
+          onClick={() => setIsDark(prev => !prev)}
+          className="flex h-9 w-9 items-center justify-center rounded-xl"
+          style={{ border: '1px solid var(--border)', background: 'var(--bg-elev-strong)', color: 'var(--text)', cursor: 'pointer' }}
+          aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+          title={isDark ? 'Modo claro' : 'Modo escuro'}
+        >
+          {isDark ? <SunIcon /> : <MoonIcon />}
+        </button>
+        <button
+          type="button"
           className="flex h-9 w-9 items-center justify-center rounded-xl"
           style={{ border: '1px solid var(--border)', background: 'var(--bg-elev-strong)', color: 'var(--text)', cursor: 'pointer' }}
           aria-label="Notificações"
